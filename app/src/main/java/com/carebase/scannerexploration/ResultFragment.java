@@ -31,7 +31,7 @@ public class ResultFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_analyzer,container,false);
         TextView fullAnalyzedTextView = rootView.findViewById(R.id.full_analyzed_text_view);
-        MainActivity mainActivity = (MainActivity) requireActivity();
+        PictureAnalysisActivity mainActivity = (PictureAnalysisActivity) requireActivity();
         String fileName = requireArguments().getString("file_name");
 
         // get file
@@ -41,7 +41,7 @@ public class ResultFragment extends Fragment {
         Bitmap bitmap = BitmapFactory.decodeFile(photoFile.getAbsolutePath());
 
         // prepare input image
-        int rotationAngle = MainActivity.getRotationAngle(photoFile.getAbsolutePath());
+        int rotationAngle = PictureAnalysisActivity.getRotationAngle(photoFile.getAbsolutePath());
         InputImage image = InputImage.fromBitmap(bitmap, rotationAngle);
 
         // process image
@@ -57,7 +57,7 @@ public class ResultFragment extends Fragment {
                     requireActivity().getSupportFragmentManager().popBackStack();
                     Toast.makeText(getContext(),"Image processing failed", Toast.LENGTH_LONG).show();
                 });
-        Objects.requireNonNull(((MainActivity) requireActivity()).getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
+        Objects.requireNonNull(((PictureAnalysisActivity) requireActivity()).getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         return rootView;
     }
 }
