@@ -84,6 +84,7 @@ public class TextAnalyzer implements ImageAnalysis.Analyzer {
             List<Text.Line> lines = block.getLines();
             for (Text.Line line: lines) {
                 allText.add(line.getText());
+                // if want to get elements(words) instead of lines
 //                List<Text.Element> elements = line.getElements();
 //                for (Text.Element element: elements) {
 //                    allText.add(element.getText());
