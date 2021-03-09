@@ -83,11 +83,11 @@ public class TextAnalyzer implements ImageAnalysis.Analyzer {
         for (Text.TextBlock block: blocks) {
             List<Text.Line> lines = block.getLines();
             for (Text.Line line: lines) {
-                List<Text.Element> elements = line.getElements();
-                for (Text.Element element: elements) {
-                    Log.d("TextAnalyzer", element.getText());
-                    allText.add(element.getText());
-                }
+                allText.add(line.getText());
+//                List<Text.Element> elements = line.getElements();
+//                for (Text.Element element: elements) {
+//                    allText.add(element.getText());
+//                }
             }
         }
         return allText;
