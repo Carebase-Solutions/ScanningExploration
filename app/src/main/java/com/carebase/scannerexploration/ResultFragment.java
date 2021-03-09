@@ -60,4 +60,6 @@ public class ResultFragment extends Fragment {
         Objects.requireNonNull(((PictureAnalysisActivity) requireActivity()).getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         return rootView;
     }
+
+
 }
