@@ -9,19 +9,22 @@ import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.mlkit.vision.barcode.Barcode;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class ScanningViewModel extends ViewModel {
     private static final String TAG = ScanningViewModel.class.getSimpleName();
 
-    private MutableLiveData<String> scannedTextLiveData;
-    private MutableLiveData<String> scannedBarcodeLiveData;
+    private final MutableLiveData<String> scannedTextLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<Barcode>> scannedBarcodeLiveData = new MutableLiveData<>();
 
     public void setupCamera(Context context, LifecycleOwner owner, Preview preview) {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(context);
@@ -39,21 +42,21 @@ public class ScanningViewModel extends ViewModel {
 //                    scannedTextLiveData.setValue(text);
 //                }));
 
-//                ImageAnalysis barcodeAnalyzer = new ImageAnalysis.Builder().build();
-//                textAnalyzer.setAnalyzer(Executors.newSingleThreadExecutor(),new BarcodeAnalyzer((barcode) -> {
-//                    scannedTextLiveData.setValue(barcode);
-//                }));
-
-
+                ImageAnalysis barcodeAnalyzer = new ImageAnalysis.Builder().build();
+                barcodeAnalyzer.setAnalyzer(Executors.newSingleThreadExecutor(),new BarcodeAnalyzer(scannedBarcodeLiveData::setValue));
 
                 // unbind use cases before rebinding
                 cameraProvider.unbindAll();
 
                 // bind use cases to camera
-                cameraProvider.bindToLifecycle(owner,cameraSelector,preview);
+                cameraProvider.bindToLifecycle(owner,cameraSelector,preview,barcodeAnalyzer);
             } catch (Exception e) {
                 Log.e(TAG, "Use case binding failed", e);
             }
         }, ContextCompat.getMainExecutor(context));
+    }
+
+    public LiveData<List<Barcode>> getScannedBarcodeLiveData() {
+        return scannedBarcodeLiveData;
     }
 }
