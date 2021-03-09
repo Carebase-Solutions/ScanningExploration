@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onLaunchAnalyzer(View view) {
         // create AnalyzerFragment
-        Fragment analyzerFragment = new AnalyzerFragment();
+        Fragment analyzerFragment = new ResultFragment();
         Bundle bundle = new Bundle();
         bundle.putString("file_name",photoFileName);
         analyzerFragment.setArguments(bundle);

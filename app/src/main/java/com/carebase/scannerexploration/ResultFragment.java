@@ -14,16 +14,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.google.android.gms.tasks.Task;
 import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.text.Text;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
 
 import java.io.File;
 import java.util.Objects;
 
-public class AnalyzerFragment extends Fragment {
+/**
+ * This fragment will display the results of the scan
+ */
+public class ResultFragment extends Fragment {
 
     @Nullable
     @Override
@@ -45,14 +46,14 @@ public class AnalyzerFragment extends Fragment {
 
         // process image
         TextRecognizer recognizer = TextRecognition.getClient();
-        Task<Text> result = recognizer.process(image)
+        recognizer.process(image)
                 .addOnSuccessListener(visionText -> {
                     String fullRecognizedText = visionText.getText();
-                    Log.d(AnalyzerFragment.class.getSimpleName(),fullRecognizedText);
+                    Log.d(ResultFragment.class.getSimpleName(),fullRecognizedText);
                     fullAnalyzedTextView.setText(fullRecognizedText);
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(AnalyzerFragment.class.getSimpleName(),"Image processing failed",e);
+                    Log.e(ResultFragment.class.getSimpleName(),"Image processing failed",e);
                     requireActivity().getSupportFragmentManager().popBackStack();
                     Toast.makeText(getContext(),"Image processing failed", Toast.LENGTH_LONG).show();
                 });
