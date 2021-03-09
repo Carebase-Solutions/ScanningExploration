@@ -31,12 +31,22 @@ public class ScanningActivity extends AppCompatActivity {
         scanningViewModel.setupCamera(this,this,preview);
 
         listenToBarcodeUpdates();
+        listenToTextUpdates();
     }
 
     private void listenToBarcodeUpdates() {
         scanningViewModel.getScannedBarcodeLiveData().observe(this,(barcodeList) -> {
             for (Barcode barcode : barcodeList) {
                 Log.d(TAG,"Scanned barcode: \n" + barcode.getDisplayValue());
+            }
+        });
+    }
+
+    private void listenToTextUpdates() {
+        scanningViewModel.getScannedTextLiveData().observe(this,(textList) -> {
+            Log.d(TAG, "Scanned Text: \n");
+            for (String text : textList) {
+                Log.d("textAnalyze", text);
             }
         });
     }

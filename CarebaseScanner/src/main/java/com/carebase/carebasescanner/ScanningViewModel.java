@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
 public class ScanningViewModel extends ViewModel {
     private static final String TAG = ScanningViewModel.class.getSimpleName();
 
-    private final MutableLiveData<String> scannedTextLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<String>> scannedTextLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<Barcode>> scannedBarcodeLiveData = new MutableLiveData<>();
 
     public void setupCamera(Context context, LifecycleOwner owner, Preview preview) {
@@ -37,10 +37,8 @@ public class ScanningViewModel extends ViewModel {
                 CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
 
                 // set up analyzers
-//                ImageAnalysis textAnalyzer = new ImageAnalysis.Builder().build();
-//                textAnalyzer.setAnalyzer(Executors.newSingleThreadExecutor(),new TextAnalyzer((text) -> {
-//                    scannedTextLiveData.setValue(text);
-//                }));
+                ImageAnalysis textAnalyzer = new ImageAnalysis.Builder().build();
+                textAnalyzer.setAnalyzer(Executors.newSingleThreadExecutor(), new TextAnalyzer((scannedTextLiveData::setValue)));
 
                 ImageAnalysis barcodeAnalyzer = new ImageAnalysis.Builder().build();
                 barcodeAnalyzer.setAnalyzer(Executors.newSingleThreadExecutor(),new BarcodeAnalyzer(scannedBarcodeLiveData::setValue));
@@ -49,7 +47,7 @@ public class ScanningViewModel extends ViewModel {
                 cameraProvider.unbindAll();
 
                 // bind use cases to camera
-                cameraProvider.bindToLifecycle(owner,cameraSelector,preview,barcodeAnalyzer);
+                cameraProvider.bindToLifecycle(owner, cameraSelector, preview, textAnalyzer);
             } catch (Exception e) {
                 Log.e(TAG, "Use case binding failed", e);
             }
@@ -58,5 +56,9 @@ public class ScanningViewModel extends ViewModel {
 
     public LiveData<List<Barcode>> getScannedBarcodeLiveData() {
         return scannedBarcodeLiveData;
+    }
+
+    public LiveData<List<String>> getScannedTextLiveData() {
+        return scannedTextLiveData;
     }
 }
