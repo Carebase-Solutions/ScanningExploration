@@ -24,10 +24,14 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
     public interface BarcodeAnalyzerListener {
         void update(List<Barcode> barcodeList);
     }
+
     private final BarcodeAnalyzerListener barcodeAnalyzerListener;
+
+    private final BarcodeScanner scanner;
 
     public BarcodeAnalyzer(BarcodeAnalyzerListener barcodeAnalyzerListener) {
         this.barcodeAnalyzerListener = barcodeAnalyzerListener;
+        scanner = BarcodeScanning.getClient();
     }
 
     @Override
@@ -36,8 +40,6 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
         Image mediaImage = imageProxy.getImage();
         if (mediaImage != null) {
             InputImage image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
-
-            BarcodeScanner scanner = BarcodeScanning.getClient();
 
             // Pass image to an ML Kit Vision API
             scanner.process(image)
@@ -58,5 +60,9 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
                     }
                 });
         }
+    }
+
+    public void destroy() {
+        scanner.close();
     }
 }

@@ -2,6 +2,7 @@ package com.carebase.carebasescanner;
 
 import android.content.Context;
 import android.util.Log;
+import android.util.Size;
 
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
@@ -18,6 +19,7 @@ import com.google.mlkit.vision.barcode.Barcode;
 
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ScanningViewModel extends ViewModel {
@@ -26,7 +28,26 @@ public class ScanningViewModel extends ViewModel {
     private final MutableLiveData<List<String>> scannedTextLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<Barcode>> scannedBarcodeLiveData = new MutableLiveData<>();
 
+    private TextAnalyzer textAnalyzer;
+    private BarcodeAnalyzer barcodeAnalyzer;
+
     public void setupCamera(Context context, LifecycleOwner owner, Preview preview) {
+        // set up analyzers
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        textAnalyzer = new TextAnalyzer(scannedTextLiveData::setValue);
+        ImageAnalysis textAnalysis = new ImageAnalysis.Builder()
+                .setTargetResolution(new Size(640,480))
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build();
+        textAnalysis.setAnalyzer(executorService, textAnalyzer);
+
+        barcodeAnalyzer = new BarcodeAnalyzer(scannedBarcodeLiveData::setValue);
+        ImageAnalysis barcodeAnalysis =  new ImageAnalysis.Builder()
+                .setTargetResolution(new Size(640,480))
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build();
+        barcodeAnalysis.setAnalyzer(executorService,barcodeAnalyzer);
+
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(context);
 
         cameraProviderFuture.addListener(() -> {
@@ -36,18 +57,11 @@ public class ScanningViewModel extends ViewModel {
                 // select back camera as default
                 CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
 
-                // set up analyzers
-                ImageAnalysis textAnalyzer = new ImageAnalysis.Builder().build();
-                textAnalyzer.setAnalyzer(Executors.newSingleThreadExecutor(), new TextAnalyzer((scannedTextLiveData::setValue)));
-
-                ImageAnalysis barcodeAnalyzer = new ImageAnalysis.Builder().build();
-                barcodeAnalyzer.setAnalyzer(Executors.newSingleThreadExecutor(),new BarcodeAnalyzer(scannedBarcodeLiveData::setValue));
-
                 // unbind use cases before rebinding
                 cameraProvider.unbindAll();
 
                 // bind use cases to camera
-                cameraProvider.bindToLifecycle(owner, cameraSelector, preview, textAnalyzer);
+                cameraProvider.bindToLifecycle(owner, cameraSelector, preview,textAnalysis);
             } catch (Exception e) {
                 Log.e(TAG, "Use case binding failed", e);
             }
@@ -60,5 +74,12 @@ public class ScanningViewModel extends ViewModel {
 
     public LiveData<List<String>> getScannedTextLiveData() {
         return scannedTextLiveData;
+    }
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        textAnalyzer.destroy();
+        barcodeAnalyzer.destroy();
     }
 }

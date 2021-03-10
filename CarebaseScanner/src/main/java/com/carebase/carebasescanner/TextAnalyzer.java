@@ -27,8 +27,7 @@ import java.util.Objects;
 public class TextAnalyzer implements ImageAnalysis.Analyzer {
     private static final String TAG = TextAnalyzer.class.getSimpleName();
 
-    private InputImage image;
-    private TextRecognizer recognizer;
+    private final TextRecognizer recognizer;
 
     public interface TextAnalyzerListener {
         void update(List<String> textList);
@@ -37,6 +36,7 @@ public class TextAnalyzer implements ImageAnalysis.Analyzer {
 
     public TextAnalyzer(TextAnalyzer.TextAnalyzerListener textAnalyzerListener) {
         this.textAnalyzerListener = textAnalyzerListener;
+        recognizer = TextRecognition.getClient();
     }
 
     @Override
@@ -44,32 +44,30 @@ public class TextAnalyzer implements ImageAnalysis.Analyzer {
     public void analyze(@NonNull ImageProxy imageProxy) {
         Image mediaImage = imageProxy.getImage();
         if (mediaImage != null) {
-            image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
-            recognizer = TextRecognition.getClient();
-            runTextRecognition(imageProxy);
+            InputImage image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
+            recognizer.process(image)
+                    .addOnSuccessListener(new OnSuccessListener<Text>() {
+                        @Override
+                        public void onSuccess(Text visionText) {
+                            List<String> textList = processTextRecognitionResult(visionText);
+                            if (!visionText.getText().isEmpty()) {
+                                textAnalyzerListener.update(textList);
+                            }
+                            imageProxy.close();
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.e(TAG,"Text Scanning Failed: ", e);
+                            imageProxy.close();
+                        }
+                    });
         }
     }
 
-    private void runTextRecognition(ImageProxy imageProxy) {
-        recognizer.process(image)
-                .addOnSuccessListener(new OnSuccessListener<Text>() {
-                    @Override
-                    public void onSuccess(Text visionText) {
-                        List<String> textList = processTextRecognitionResult(visionText);
-                        if (!textList.isEmpty()) {
-                            textAnalyzerListener.update(textList);
-                        }
-                        imageProxy.close();
-                    }
-                })
-                .addOnFailureListener(
-                        new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Log.e(TAG,"Text Scanning Failed: ", e);
-                                imageProxy.close();
-                            }
-                        });
+    public void destroy() {
+        recognizer.close();
     }
 
     private List<String> processTextRecognitionResult(Text visionText) {
