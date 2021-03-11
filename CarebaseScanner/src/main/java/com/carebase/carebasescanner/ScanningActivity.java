@@ -2,6 +2,7 @@ package com.carebase.carebasescanner;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -46,16 +47,24 @@ public class ScanningActivity extends AppCompatActivity {
         graphicOverlay.add(reticleGraphic);
 
         scanningViewModel.getStateLiveData().observe(this,state -> {
-            if (state == ScanningViewModel.ScanningState.DETECTING) {
+            // TODO handle confirming state
+            if (state == ScanningViewModel.ScanningState.DETECTING || state == ScanningViewModel.ScanningState.CONFIRMING) {
                 cameraReticleAnimator.start();
+            } else {
+                cameraReticleAnimator.cancel();
             }
         });
     }
 
     private void listenToBarcodeUpdates() {
         scanningViewModel.getScannedBarcodeLiveData().observe(this,(barcodeList) -> {
-            for (Barcode barcode : barcodeList) {
-                Log.d(TAG,"Scanned barcode: \n" + barcode.getDisplayValue());
+            if (scanningViewModel.getStateLiveData().getValue() == ScanningViewModel.ScanningState.SEARCHING) {
+                StringBuilder udi = new StringBuilder();
+                for (Barcode barcode : barcodeList) {
+                    udi.append(barcode.getDisplayValue());
+                }
+                Toast.makeText(this,udi.toString(),Toast.LENGTH_LONG).show();
+                Log.d(TAG,"UDI: " + udi.toString());
             }
         });
     }

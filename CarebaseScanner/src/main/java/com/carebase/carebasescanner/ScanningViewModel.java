@@ -47,7 +47,11 @@ public class ScanningViewModel extends ViewModel {
         /**
          * The scanner has found the product of its scan and finished scanning.
          */
-        DETECTED
+        DETECTED,
+        /**
+         * The scanner has not found reliable barcodes or text in the allotted time
+         */
+        TIMEOUT
     }
 
     private final MutableLiveData<List<String>> scannedTextLiveData = new MutableLiveData<>();
@@ -57,18 +61,21 @@ public class ScanningViewModel extends ViewModel {
     private TextAnalyzer textAnalyzer;
     private BarcodeAnalyzer barcodeAnalyzer;
 
+    private ImageAnalysis textAnalysis;
+    private ImageAnalysis barcodeAnalysis;
+
     public void setupCamera(Context context, LifecycleOwner owner, Preview preview) {
         // set up analyzers
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         textAnalyzer = new TextAnalyzer(this::onTextResult);
-        ImageAnalysis textAnalysis = new ImageAnalysis.Builder()
+        textAnalysis = new ImageAnalysis.Builder()
                 .setTargetResolution(new Size(640,480))
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build();
         textAnalysis.setAnalyzer(executorService, textAnalyzer);
 
         barcodeAnalyzer = new BarcodeAnalyzer(this::onBarcodeResult);
-        ImageAnalysis barcodeAnalysis =  new ImageAnalysis.Builder()
+        barcodeAnalysis =  new ImageAnalysis.Builder()
                 .setTargetResolution(new Size(640,480))
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build();
@@ -95,13 +102,24 @@ public class ScanningViewModel extends ViewModel {
     }
 
     public void onTextResult(List<String> text) {
-        stateLiveData.setValue(ScanningState.DETECTING);
         scannedTextLiveData.setValue(text);
     }
 
-    public void onBarcodeResult(List<Barcode> barcodeList) {
-        stateLiveData.setValue(ScanningState.DETECTING);
-        scannedBarcodeLiveData.setValue(barcodeList);
+    public void onBarcodeResult(List<Barcode> barcodeList, BarcodeAnalyzer.State state) {
+        if (state == BarcodeAnalyzer.State.DETECTING) {
+            stateLiveData.setValue(ScanningState.DETECTING);
+        }
+        // partial udi is found
+        else if (state == BarcodeAnalyzer.State.CONFIRMING) {
+            stateLiveData.setValue(ScanningState.CONFIRMING);
+        }
+        // udi is found
+        else if (state == BarcodeAnalyzer.State.CONFIRMED) {
+            stateLiveData.setValue(ScanningState.SEARCHING);
+            // stop scanning for barcodes
+            barcodeAnalysis.clearAnalyzer();
+            scannedBarcodeLiveData.setValue(barcodeList);
+        }
     }
 
     public MutableLiveData<List<String>> getScannedTextLiveData() {
