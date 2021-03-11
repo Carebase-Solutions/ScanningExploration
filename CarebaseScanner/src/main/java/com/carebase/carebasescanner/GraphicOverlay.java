@@ -20,7 +20,7 @@ public class GraphicOverlay extends View {
     private float widthScaleFactor = 1.0f;
     private int previewHeight = 0;
     private float heightScaleFactor = 1.0f;
-    private List<Graphic> grahpicList = new ArrayList<>();
+    private List<Graphic> graphicList = new ArrayList<>();
 
     abstract static class Graphic {
         protected GraphicOverlay overlay;
@@ -40,14 +40,14 @@ public class GraphicOverlay extends View {
 
     public void clear() {
         synchronized (lock) {
-            grahpicList.clear();
+            graphicList.clear();
         }
         postInvalidate();
     }
 
     public void add(Graphic graphic) {
         synchronized (lock) {
-            grahpicList.add(graphic);
+            graphicList.add(graphic);
         }
     }
 
@@ -76,7 +76,7 @@ public class GraphicOverlay extends View {
         super.onDraw(canvas);
 
         synchronized (lock) {
-            for (Graphic graphic : grahpicList) {
+            for (Graphic graphic : graphicList) {
                 graphic.draw(canvas);
             }
         }

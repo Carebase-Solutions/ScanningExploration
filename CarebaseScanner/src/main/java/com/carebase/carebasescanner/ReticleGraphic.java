@@ -70,7 +70,7 @@ public class ReticleGraphic extends GraphicOverlay.Graphic {
                innerRingStrokePaint);
 
        // draws the ripple to simulate the breathing animation effect
-       ripplePaint.setAlpha(rippleAlpha * Float.valueOf(animator.getRippleAlphaScale()).intValue());
+       ripplePaint.setAlpha(Float.valueOf(rippleAlpha * animator.getRippleAlphaScale()).intValue());
        ripplePaint.setStrokeWidth(rippleStrokeWidth * animator.getRippleStrokeWidthScale());
        float radius = outerRingStrokeRadius + rippleSizeOffset * animator.getRippleSizeScale();
        canvas.drawCircle(cx,cy,radius,ripplePaint);

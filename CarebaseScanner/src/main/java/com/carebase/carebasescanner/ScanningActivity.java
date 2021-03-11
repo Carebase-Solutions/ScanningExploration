@@ -42,9 +42,14 @@ public class ScanningActivity extends AppCompatActivity {
 
     private void startGraphicOverlay() {
         cameraReticleAnimator = new CameraReticleAnimator(graphicOverlay);
-        cameraReticleAnimator.start();
         ReticleGraphic reticleGraphic = new ReticleGraphic(graphicOverlay,cameraReticleAnimator);
         graphicOverlay.add(reticleGraphic);
+
+        scanningViewModel.getStateLiveData().observe(this,state -> {
+            if (state == ScanningViewModel.ScanningState.DETECTING) {
+                cameraReticleAnimator.start();
+            }
+        });
     }
 
     private void listenToBarcodeUpdates() {

@@ -46,9 +46,7 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
                 .addOnSuccessListener(new OnSuccessListener<List<Barcode>>() {
                     @Override
                     public void onSuccess(List<Barcode> barcodeList) {
-                        if (!barcodeList.isEmpty()) {
-                            barcodeAnalyzerListener.update(barcodeList);
-                        }
+                        barcodeAnalyzerListener.update(barcodeList);
                         imageProxy.close();
                     }
                 })
