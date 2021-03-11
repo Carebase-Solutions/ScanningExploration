@@ -43,11 +43,18 @@ public class ScanningActivity extends AppCompatActivity {
     private void startGraphicOverlay() {
         cameraReticleAnimator = new CameraReticleAnimator(graphicOverlay);
         ReticleGraphic reticleGraphic = new ReticleGraphic(graphicOverlay,cameraReticleAnimator);
+        ObjectConfirmationController confirmationController = new ObjectConfirmationController(graphicOverlay);
+        LoaderReticleGraphic loaderReticleGraphic = new LoaderReticleGraphic(graphicOverlay, confirmationController);
         graphicOverlay.add(reticleGraphic);
 
         scanningViewModel.getStateLiveData().observe(this,state -> {
             if (state == ScanningViewModel.ScanningState.DETECTING) {
                 cameraReticleAnimator.start();
+            } else if (state == ScanningViewModel.ScanningState.CONFIRMING) {
+                graphicOverlay.clear();
+                graphicOverlay.add(loaderReticleGraphic);
+                // for testing the loading animation
+                confirmationController.confirming(1);
             }
         });
     }

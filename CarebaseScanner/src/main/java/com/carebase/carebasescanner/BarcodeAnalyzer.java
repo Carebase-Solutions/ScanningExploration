@@ -17,6 +17,7 @@ import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.common.InputImage;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
     private static final String TAG = BarcodeAnalyzer.class.getSimpleName();

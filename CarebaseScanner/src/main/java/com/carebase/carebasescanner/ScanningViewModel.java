@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 import android.util.Size;
 
+import androidx.annotation.MainThread;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.Preview;
@@ -11,7 +12,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
@@ -19,7 +19,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.barcode.Barcode;
 
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -100,7 +99,9 @@ public class ScanningViewModel extends ViewModel {
     }
 
     public void onBarcodeResult(List<Barcode> barcodeList) {
-        stateLiveData.setValue(ScanningState.DETECTING);
+//        stateLiveData.setValue(ScanningState.DETECTING);
+        // to test loading animation
+        stateLiveData.setValue(ScanningState.CONFIRMING);
         scannedBarcodeLiveData.setValue(barcodeList);
     }
 
@@ -121,5 +122,15 @@ public class ScanningViewModel extends ViewModel {
         super.onCleared();
         textAnalyzer.destroy();
         barcodeAnalyzer.destroy();
+    }
+
+    @MainThread
+    public void confirming(float progress) {
+        boolean isConfirmed = (progress == 1f);
+        if (isConfirmed) {
+            stateLiveData.setValue(ScanningState.SEARCHING);
+        } else {
+            stateLiveData.setValue(ScanningState.CONFIRMING);
+        }
     }
 }
