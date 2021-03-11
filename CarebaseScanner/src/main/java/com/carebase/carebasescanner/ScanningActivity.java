@@ -16,12 +16,16 @@ public class ScanningActivity extends AppCompatActivity {
 
     private ScanningViewModel scanningViewModel;
 
+    private GraphicOverlay graphicOverlay;
+    private CameraReticleAnimator cameraReticleAnimator;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scanning);
 
         PreviewView viewFinder = findViewById(R.id.viewFinder);
+        graphicOverlay = findViewById(R.id.graphic_overlay);
 
         // set up preview use case
         Preview preview = new Preview.Builder().build();
@@ -30,8 +34,17 @@ public class ScanningActivity extends AppCompatActivity {
         scanningViewModel = new ViewModelProvider(this).get(ScanningViewModel.class);
         scanningViewModel.setupCamera(this,this,preview);
 
+        startGraphicOverlay();
+
         listenToBarcodeUpdates();
         listenToTextUpdates();
+    }
+
+    private void startGraphicOverlay() {
+        cameraReticleAnimator = new CameraReticleAnimator(graphicOverlay);
+        cameraReticleAnimator.start();
+        ReticleGraphic reticleGraphic = new ReticleGraphic(graphicOverlay,cameraReticleAnimator);
+        graphicOverlay.add(reticleGraphic);
     }
 
     private void listenToBarcodeUpdates() {

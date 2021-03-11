@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="transparent">#00000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="lighter_grey">#DDDDDD</color>
+    <color name="dark">#9A000000</color>
+    <color name="reticle_ripple">#9AFFFFFF</color>
+    <color name="object_reticle_outer_ring_fill">#1F000000</color>
+    <color name="object_reticle_outer_ring_stroke">#9AFFFFFF</color>
+    <color name="object_reticle_inner_ring">@color/white</color>
+</resources>

@@ -61,7 +61,7 @@ public class ScanningViewModel extends ViewModel {
                 cameraProvider.unbindAll();
 
                 // bind use cases to camera
-                cameraProvider.bindToLifecycle(owner, cameraSelector, preview,textAnalysis);
+                cameraProvider.bindToLifecycle(owner, cameraSelector, preview);
             } catch (Exception e) {
                 Log.e(TAG, "Use case binding failed", e);
             }
