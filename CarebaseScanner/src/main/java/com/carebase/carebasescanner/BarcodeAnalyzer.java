@@ -4,6 +4,7 @@ import android.media.Image;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
@@ -25,7 +26,7 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
     private static final String TAG = BarcodeAnalyzer.class.getSimpleName();
 
     public interface BarcodeAnalyzerListener {
-        void update(List<Barcode> barcodeList, State state);
+        void update(List<Barcode> barcodeList, @Nullable String udi, State state);
     }
 
     private final BarcodeAnalyzerListener barcodeAnalyzerListener;
@@ -79,31 +80,52 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
     private void analyzeBarcodes(List<Barcode> barcodeList) {
         for (Barcode barcode : barcodeList) {
             String b = barcode.getDisplayValue();
-            if (isGS1UDI(b)) {
+            Log.d(TAG,"Scanned: " + b);
+            if (isUDI(b)) {
                 udiBarcodes.add(barcode);
-                barcodeAnalyzerListener.update(udiBarcodes, State.CONFIRMED);
+                barcodeAnalyzerListener.update(udiBarcodes, b, State.CONFIRMED);
                 return;
             }
 
-            if (isGS1DI(b)) {
+            if (isDI(b)) {
                 if (udi[0] == null) {
                     udiBarcodes.add(0,barcode);
                     udi[0] = b;
                 }
-            } else if (isGS1PI(b)) {
+            } else if (isPI(b)) {
                 if (udi[1] == null) {
                     udiBarcodes.add(barcode);
                     udi[1] = b;
                 }
             }
         }
-        if (udi[0] != null && udi[1] != null && isGS1UDI(udi[0] + udi[1])) {
-            barcodeAnalyzerListener.update(udiBarcodes, State.CONFIRMED);
+        if (udi[0] != null && udi[1] != null) {
+            if (isHIBCCDI(udi[0]) && isHIBCCPI(udi[1])){
+                String udi = this.udi[0] + "/" + this.udi[1].substring(1);
+                if (isHIBCCUDI(udi)) {
+                    barcodeAnalyzerListener.update(udiBarcodes, udi, State.CONFIRMED);
+                }
+            }
+            if (isGS1UDI(udi[0] + udi[1])) {
+                barcodeAnalyzerListener.update(udiBarcodes, udi[0] + udi[1], State.CONFIRMED);
+            }
         }
         else if (udi[0] != null || udi[1] != null) {
-            barcodeAnalyzerListener.update(udiBarcodes, State.CONFIRMING);
+            barcodeAnalyzerListener.update(udiBarcodes, null, State.CONFIRMING);
         }
-        barcodeAnalyzerListener.update(udiBarcodes,State.DETECTING);
+        barcodeAnalyzerListener.update(udiBarcodes,null, State.DETECTING);
+    }
+
+    private boolean isDI(String barcode) {
+        return isGS1DI(barcode) || isHIBCCDI(barcode);
+    }
+
+    private boolean isPI(String barcode) {
+        return isGS1PI(barcode) || isHIBCCPI(barcode);
+    }
+
+    private boolean isUDI(String barcode) {
+        return isGS1UDI(barcode) || isHIBCCUDI(barcode);
     }
 
     private static final String GS1DIREGEX = "01\\d{14}";
@@ -123,18 +145,31 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
         return matcher.matches();
     }
 
-    private String getGS1DIString(String udi) {
-        Matcher matcher = GS1DIPATTERN.matcher(udi);
-        return matcher.group();
-    }
-
-    private String getGS1PIString(String udi) {
-        Matcher matcher = GS1PIPATTERN.matcher(udi);
-        return matcher.group();
-    }
-
     private boolean isGS1UDI(String barcode) {
         Matcher matcher = GS1UDIPATTERN.matcher(barcode);
         return matcher.matches();
     }
+
+    private static final String HIBCCDIREGEX = "\\+[\\w^_]{6,23}";
+    private static final String HIBCCPIREGEX = "\\+([^_/]{6,30})(/([^_/]{6,30})?)*";
+    private static final String HIBCCUDIREGEX = "\\+[\\w^_]{6,23}(/([^_/]{6,30})?)+";
+    private final Pattern HIBCCDIPATTERN = Pattern.compile(HIBCCDIREGEX);
+    private final Pattern HIBCCPIPATTERN = Pattern.compile(HIBCCPIREGEX);
+    private final Pattern HIBCCUDIPATTERN = Pattern.compile(HIBCCUDIREGEX);
+
+    private boolean isHIBCCDI(String barcode) {
+        Matcher matcher = HIBCCDIPATTERN.matcher(barcode);
+        return matcher.matches();
+    }
+
+    private boolean isHIBCCPI(String barcode) {
+        Matcher matcher = HIBCCPIPATTERN.matcher(barcode);
+        return matcher.matches();
+    }
+
+    private boolean isHIBCCUDI(String barcode) {
+        Matcher matcher = HIBCCUDIPATTERN.matcher(barcode);
+        return matcher.matches();
+    }
+
 }

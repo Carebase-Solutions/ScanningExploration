@@ -42,6 +42,7 @@ public class ScanningActivity extends AppCompatActivity {
         startGraphicOverlay();
 
         listenToBarcodeUpdates();
+        listenForUDI();
         listenToTextUpdates();
     }
 
@@ -60,15 +61,20 @@ public class ScanningActivity extends AppCompatActivity {
         });
     }
 
+    private void listenForUDI() {
+        scanningViewModel.getScannedUDILiveData().observe(this, udi -> {
+            Toast.makeText(this,udi,Toast.LENGTH_LONG).show();
+            Log.d(TAG,"UDI: " + udi);
+        });
+    }
+
     private void listenToBarcodeUpdates() {
         scanningViewModel.getScannedBarcodeLiveData().observe(this,(barcodeList) -> {
             if (scanningViewModel.getStateLiveData().getValue() == ScanningViewModel.ScanningState.SEARCHING) {
-                StringBuilder udi = new StringBuilder();
+                // display barcodes
                 for (Barcode barcode : barcodeList) {
-                    udi.append(barcode.getDisplayValue());
+                    //
                 }
-                Toast.makeText(this,udi.toString(),Toast.LENGTH_LONG).show();
-                Log.d(TAG,"UDI: " + udi.toString());
             }
         });
     }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 import android.util.Size;
 
+import androidx.annotation.Nullable;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.Preview;
@@ -55,7 +56,8 @@ public class ScanningViewModel extends ViewModel {
     }
 
     private final MutableLiveData<List<String>> scannedTextLiveData = new MutableLiveData<>();
-    private final MutableLiveData<List<Barcode>> scannedBarcodeLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<Barcode>> scannedBarcodesLiveData = new MutableLiveData<>();
+    private final MutableLiveData<String> scannedUDILiveData = new MutableLiveData<>();
     private final MutableLiveData<ScanningState> stateLiveData = new MutableLiveData<>();
 
     private TextAnalyzer textAnalyzer;
@@ -105,7 +107,7 @@ public class ScanningViewModel extends ViewModel {
         scannedTextLiveData.setValue(text);
     }
 
-    public void onBarcodeResult(List<Barcode> barcodeList, BarcodeAnalyzer.State state) {
+    public void onBarcodeResult(List<Barcode> barcodeList, @Nullable String udi, BarcodeAnalyzer.State state) {
         if (state == BarcodeAnalyzer.State.DETECTING) {
             stateLiveData.setValue(ScanningState.DETECTING);
         }
@@ -118,7 +120,8 @@ public class ScanningViewModel extends ViewModel {
             stateLiveData.setValue(ScanningState.SEARCHING);
             // stop scanning for barcodes
             barcodeAnalysis.clearAnalyzer();
-            scannedBarcodeLiveData.setValue(barcodeList);
+            scannedBarcodesLiveData.setValue(barcodeList);
+            scannedUDILiveData.setValue(udi);
         }
     }
 
@@ -127,7 +130,11 @@ public class ScanningViewModel extends ViewModel {
     }
 
     public LiveData<List<Barcode>> getScannedBarcodeLiveData() {
-        return scannedBarcodeLiveData;
+        return scannedBarcodesLiveData;
+    }
+
+    public LiveData<String> getScannedUDILiveData() {
+        return scannedUDILiveData;
     }
 
     public LiveData<ScanningState> getStateLiveData() {
