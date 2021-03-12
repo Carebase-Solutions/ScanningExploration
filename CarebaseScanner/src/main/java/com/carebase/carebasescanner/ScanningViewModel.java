@@ -5,6 +5,7 @@ import android.util.Log;
 import android.util.Size;
 
 import androidx.annotation.MainThread;
+import androidx.annotation.Nullable;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.Preview;
@@ -19,6 +20,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.barcode.Barcode;
 
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -46,28 +48,36 @@ public class ScanningViewModel extends ViewModel {
         /**
          * The scanner has found the product of its scan and finished scanning.
          */
-        DETECTED
+        DETECTED,
+        /**
+         * The scanner has not found reliable barcodes or text in the allotted time
+         */
+        TIMEOUT
     }
 
     private final MutableLiveData<List<String>> scannedTextLiveData = new MutableLiveData<>();
-    private final MutableLiveData<List<Barcode>> scannedBarcodeLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<Barcode>> scannedBarcodesLiveData = new MutableLiveData<>();
+    private final MutableLiveData<String> scannedUDILiveData = new MutableLiveData<>();
     private final MutableLiveData<ScanningState> stateLiveData = new MutableLiveData<>();
 
     private TextAnalyzer textAnalyzer;
     private BarcodeAnalyzer barcodeAnalyzer;
 
+    private ImageAnalysis textAnalysis;
+    private ImageAnalysis barcodeAnalysis;
+
     public void setupCamera(Context context, LifecycleOwner owner, Preview preview) {
         // set up analyzers
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         textAnalyzer = new TextAnalyzer(this::onTextResult);
-        ImageAnalysis textAnalysis = new ImageAnalysis.Builder()
+        textAnalysis = new ImageAnalysis.Builder()
                 .setTargetResolution(new Size(640,480))
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build();
         textAnalysis.setAnalyzer(executorService, textAnalyzer);
 
         barcodeAnalyzer = new BarcodeAnalyzer(this::onBarcodeResult);
-        ImageAnalysis barcodeAnalysis =  new ImageAnalysis.Builder()
+        barcodeAnalysis =  new ImageAnalysis.Builder()
                 .setTargetResolution(new Size(640,480))
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build();
@@ -94,15 +104,25 @@ public class ScanningViewModel extends ViewModel {
     }
 
     public void onTextResult(List<String> text) {
-        stateLiveData.setValue(ScanningState.DETECTING);
         scannedTextLiveData.setValue(text);
     }
 
-    public void onBarcodeResult(List<Barcode> barcodeList) {
-//        stateLiveData.setValue(ScanningState.DETECTING);
-        // to test loading animation
-        stateLiveData.setValue(ScanningState.CONFIRMING);
-        scannedBarcodeLiveData.setValue(barcodeList);
+    public void onBarcodeResult(List<Barcode> barcodeList, @Nullable String udi, BarcodeAnalyzer.State state) {
+        if (state == BarcodeAnalyzer.State.DETECTING) {
+            stateLiveData.setValue(ScanningState.DETECTING);
+        }
+        // partial udi is found
+        else if (state == BarcodeAnalyzer.State.CONFIRMING) {
+            stateLiveData.setValue(ScanningState.CONFIRMING);
+        }
+        // udi is found
+        else if (state == BarcodeAnalyzer.State.CONFIRMED) {
+            stateLiveData.setValue(ScanningState.SEARCHING);
+            // stop scanning for barcodes
+            barcodeAnalysis.clearAnalyzer();
+            scannedBarcodesLiveData.setValue(barcodeList);
+            scannedUDILiveData.setValue(udi);
+        }
     }
 
     public MutableLiveData<List<String>> getScannedTextLiveData() {
@@ -110,7 +130,11 @@ public class ScanningViewModel extends ViewModel {
     }
 
     public LiveData<List<Barcode>> getScannedBarcodeLiveData() {
-        return scannedBarcodeLiveData;
+        return scannedBarcodesLiveData;
+    }
+
+    public LiveData<String> getScannedUDILiveData() {
+        return scannedUDILiveData;
     }
 
     public LiveData<ScanningState> getStateLiveData() {

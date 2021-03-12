@@ -10,7 +10,7 @@ import com.carebase.carebasescanner.R;
 
 public class PreferenceUtils {
     static public int getConfirmationTimeMs(Context context) {
-        return getIntPref(context, R.string.pref_key_confirmation_time_in_manual_search, 500);
+        return getIntPref(context, R.string.pref_key_confirmation_time_in_manual_search, 1000);
     }
 
     static private int getIntPref(Context context, @StringRes int prefKeyId, int defaultValue) {

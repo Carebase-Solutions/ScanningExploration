@@ -48,13 +48,8 @@ public class ObjectConfirmationController {
         };
     }
 
-    public void confirming(Integer objectId) {
-        if (objectId == this.objectId) {
-            // Do nothing if it's already in confirming.
-            return;
-        }
+    public void confirming() {
         reset();
-        this.objectId = objectId;
         countDownTimer.start();
     }
 

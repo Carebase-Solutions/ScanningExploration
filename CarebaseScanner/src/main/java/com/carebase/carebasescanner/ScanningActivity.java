@@ -2,6 +2,7 @@ package com.carebase.carebasescanner;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -9,6 +10,7 @@ import androidx.camera.core.Preview;
 import androidx.camera.view.PreviewView;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.mlkit.vision.barcode.Barcode;
 
 public class ScanningActivity extends AppCompatActivity {
@@ -24,6 +26,9 @@ public class ScanningActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scanning);
 
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener((view) -> finish());
+
         PreviewView viewFinder = findViewById(R.id.viewFinder);
         graphicOverlay = findViewById(R.id.graphic_overlay);
 
@@ -37,32 +42,46 @@ public class ScanningActivity extends AppCompatActivity {
         startGraphicOverlay();
 
         listenToBarcodeUpdates();
+        listenForUDI();
         listenToTextUpdates();
     }
 
     private void startGraphicOverlay() {
         cameraReticleAnimator = new CameraReticleAnimator(graphicOverlay);
         ReticleGraphic reticleGraphic = new ReticleGraphic(graphicOverlay,cameraReticleAnimator);
-        ObjectConfirmationController confirmationController = new ObjectConfirmationController(graphicOverlay);
-        LoaderReticleGraphic loaderReticleGraphic = new LoaderReticleGraphic(graphicOverlay, confirmationController);
         graphicOverlay.add(reticleGraphic);
 
         scanningViewModel.getStateLiveData().observe(this,state -> {
+            // TODO handle confirming state
             if (state == ScanningViewModel.ScanningState.DETECTING) {
                 cameraReticleAnimator.start();
             } else if (state == ScanningViewModel.ScanningState.CONFIRMING) {
+                ObjectConfirmationController confirmationController = new ObjectConfirmationController(graphicOverlay);
+                LoaderReticleGraphic loaderReticleGraphic = new LoaderReticleGraphic(graphicOverlay, confirmationController);
                 graphicOverlay.clear();
                 graphicOverlay.add(loaderReticleGraphic);
-                // for testing the loading animation
-                confirmationController.confirming(1);
+                // start loading animation
+                confirmationController.confirming();
+            } else {
+                cameraReticleAnimator.cancel();
             }
+        });
+    }
+
+    private void listenForUDI() {
+        scanningViewModel.getScannedUDILiveData().observe(this, udi -> {
+            Toast.makeText(this,udi,Toast.LENGTH_LONG).show();
+            Log.d(TAG,"UDI: " + udi);
         });
     }
 
     private void listenToBarcodeUpdates() {
         scanningViewModel.getScannedBarcodeLiveData().observe(this,(barcodeList) -> {
-            for (Barcode barcode : barcodeList) {
-                Log.d(TAG,"Scanned barcode: \n" + barcode.getDisplayValue());
+            if (scanningViewModel.getStateLiveData().getValue() == ScanningViewModel.ScanningState.SEARCHING) {
+                // display barcodes
+                for (Barcode barcode : barcodeList) {
+                    //
+                }
             }
         });
     }
