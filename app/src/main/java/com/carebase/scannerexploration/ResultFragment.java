@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
@@ -31,8 +32,11 @@ public class ResultFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_analyzer,container,false);
         TextView fullAnalyzedTextView = rootView.findViewById(R.id.full_analyzed_text_view);
+        MaterialToolbar toolbar = rootView.findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener((view) -> requireActivity().getSupportFragmentManager().popBackStack());
         PictureAnalysisActivity mainActivity = (PictureAnalysisActivity) requireActivity();
         String fileName = requireArguments().getString("file_name");
+
 
         // get file
         File photoFile = mainActivity.getPhotoFileUri(fileName);
@@ -57,7 +61,6 @@ public class ResultFragment extends Fragment {
                     requireActivity().getSupportFragmentManager().popBackStack();
                     Toast.makeText(getContext(),"Image processing failed", Toast.LENGTH_LONG).show();
                 });
-        Objects.requireNonNull(((PictureAnalysisActivity) requireActivity()).getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         return rootView;
     }
 

@@ -10,6 +10,7 @@ import androidx.camera.core.Preview;
 import androidx.camera.view.PreviewView;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.mlkit.vision.barcode.Barcode;
 
 public class ScanningActivity extends AppCompatActivity {
@@ -24,6 +25,9 @@ public class ScanningActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scanning);
+
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener((view) -> finish());
 
         PreviewView viewFinder = findViewById(R.id.viewFinder);
         graphicOverlay = findViewById(R.id.graphic_overlay);

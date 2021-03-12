@@ -21,6 +21,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
+import android.widget.Toolbar;
+
+import com.google.android.material.appbar.MaterialToolbar;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,25 +42,11 @@ public class PictureAnalysisActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_picture_analysis);
         findViewById(R.id.take_picture_button).setOnClickListener(this::onLaunchCamera);
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener((view) -> finish());
         analyzeButton = findViewById(R.id.analyze_button);
         analyzeButton.setOnClickListener(this::onLaunchAnalyzer);
         ivPreview = (ImageView) findViewById(R.id.image_view_preview);
-    }
-
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home: {
-                FragmentManager fm = getSupportFragmentManager();
-                if (fm.getBackStackEntryCount() > 0) {
-                    fm.popBackStack();
-                    ivPreview.setImageResource(android.R.color.transparent);
-                    analyzeButton.setEnabled(false);
-                    return true;
-                }
-                break;
-            }
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
