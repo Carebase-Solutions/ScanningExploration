@@ -3,8 +3,6 @@ package com.carebase.carebasescanner;
 import android.os.CountDownTimer;
 import android.util.Log;
 
-import com.carebase.carebasescanner.settings.PreferenceUtils;
-
 /**
  * Controls the progress of object confirmation before performing additional operation on the
  * detected object.
@@ -33,7 +31,7 @@ public class ObjectConfirmationController {
      */
     public ObjectConfirmationController(GraphicOverlay graphicOverlay) {
         this.graphicOverlay = graphicOverlay;
-        long confirmationTimeMs = Long.valueOf(PreferenceUtils.getConfirmationTimeMs(graphicOverlay.getContext()));
+        long confirmationTimeMs = Long.valueOf(1000);
         countDownTimer = new CountDownTimer(confirmationTimeMs, 20) {
             @Override
             public void onTick(long millisUntilFinished) {
