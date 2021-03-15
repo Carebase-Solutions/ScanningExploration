@@ -113,15 +113,15 @@ public class ScanningViewModel extends ViewModel {
         }
         // partial udi is found
         else if (state == BarcodeAnalyzer.State.CONFIRMING) {
-            stateLiveData.setValue(ScanningState.CONFIRMING);
+            scannedBarcodesLiveData.setValue(barcodeList);
         }
         // udi is found
         else if (state == BarcodeAnalyzer.State.CONFIRMED) {
-            stateLiveData.setValue(ScanningState.SEARCHING);
-            // stop scanning for barcodes
-            barcodeAnalysis.clearAnalyzer();
+            stateLiveData.setValue(ScanningState.CONFIRMING);
             scannedBarcodesLiveData.setValue(barcodeList);
             scannedUDILiveData.setValue(udi);
+            barcodeAnalysis.clearAnalyzer();
+
         }
     }
 
@@ -148,13 +148,10 @@ public class ScanningViewModel extends ViewModel {
         barcodeAnalyzer.destroy();
     }
 
-    @MainThread
     public void confirming(float progress) {
         boolean isConfirmed = (progress == 1f);
         if (isConfirmed) {
             stateLiveData.setValue(ScanningState.SEARCHING);
-        } else {
-            stateLiveData.setValue(ScanningState.CONFIRMING);
         }
     }
 }
