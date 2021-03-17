@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.mlkit.vision.barcode.Barcode;
+import java.util.ArrayList;
 
 public class ScanningActivity extends AppCompatActivity {
     private static final String TAG = ScanningActivity.class.getSimpleName();
@@ -70,12 +71,29 @@ public class ScanningActivity extends AppCompatActivity {
 
     private void listenToBarcodeUpdates() {
         scanningViewModel.getScannedBarcodeLiveData().observe(this,(barcodeList) -> {
-            if (scanningViewModel.getStateLiveData().getValue() == ScanningViewModel.ScanningState.SEARCHING) {
-                // display barcodes
-                for (Barcode barcode : barcodeList) {
-                    //
+            for (Barcode barcode : barcodeList) {
+                if (barcode != null) {
+                    ArrayList barcodeFieldList = new ArrayList<BarcodeField>();
+                    barcodeFieldList.add(new BarcodeField("Raw Value", barcode.getRawValue()));
+                    BarcodeResultFragment.Companion.show(getSupportFragmentManager(), barcodeFieldList);
                 }
             }
+//            if (scanningViewModel.getStateLiveData().getValue() == ScanningViewModel.ScanningState.SEARCHING) {
+//                // display barcodes
+//                for (Barcode barcode : barcodeList) {
+//                    //
+//                }
+//            }
+//            if (scanningViewModel.getStateLiveData().getValue() == ScanningViewModel.ScanningState.DETECTED) {
+//                // display barcodes
+//                for (Barcode barcode : barcodeList) {
+//                    if (barcode != null) {
+//                        ArrayList barcodeFieldList = new ArrayList<BarcodeField>();
+//                        barcodeFieldList.add(new BarcodeField("Raw Value", barcode.getRawValue()));
+//                        BarcodeResultFragment.Companion.show(getSupportFragmentManager(), barcodeFieldList);
+//                    }
+//                }
+//            }
         });
     }
 
