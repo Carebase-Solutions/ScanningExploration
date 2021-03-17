@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 import android.util.Size;
 
+import androidx.annotation.MainThread;
 import androidx.annotation.Nullable;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
@@ -12,7 +13,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
@@ -113,15 +113,15 @@ public class ScanningViewModel extends ViewModel {
         }
         // partial udi is found
         else if (state == BarcodeAnalyzer.State.CONFIRMING) {
-            stateLiveData.setValue(ScanningState.CONFIRMING);
+            scannedBarcodesLiveData.setValue(barcodeList);
         }
         // udi is found
         else if (state == BarcodeAnalyzer.State.CONFIRMED) {
-            stateLiveData.setValue(ScanningState.SEARCHING);
-            // stop scanning for barcodes
-            barcodeAnalysis.clearAnalyzer();
+            stateLiveData.setValue(ScanningState.CONFIRMING);
             scannedBarcodesLiveData.setValue(barcodeList);
             scannedUDILiveData.setValue(udi);
+            barcodeAnalysis.clearAnalyzer();
+
         }
     }
 
@@ -146,5 +146,12 @@ public class ScanningViewModel extends ViewModel {
         super.onCleared();
         textAnalyzer.destroy();
         barcodeAnalyzer.destroy();
+    }
+
+    public void confirming(float progress) {
+        boolean isConfirmed = (progress == 1f);
+        if (isConfirmed) {
+            stateLiveData.setValue(ScanningState.SEARCHING);
+        }
     }
 }

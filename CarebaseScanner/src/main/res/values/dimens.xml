@@ -7,4 +7,5 @@
     <dimen name="object_reticle_outer_ring_stroke_width">4dp</dimen>
     <dimen name="object_reticle_inner_ring_stroke_radius">14dp</dimen>
     <dimen name="object_reticle_inner_ring_stroke_width">2dp</dimen>
+    <dimen name="object_reticle_progress_ring_stroke_width">4dp</dimen>
 </resources>

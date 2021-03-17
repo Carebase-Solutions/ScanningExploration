@@ -51,10 +51,19 @@ public class ScanningActivity extends AppCompatActivity {
         ReticleGraphic reticleGraphic = new ReticleGraphic(graphicOverlay,cameraReticleAnimator);
         graphicOverlay.add(reticleGraphic);
 
+        ObjectConfirmationController confirmationController = new ObjectConfirmationController(graphicOverlay);
+        LoaderReticleGraphic loaderReticleGraphic = new LoaderReticleGraphic(graphicOverlay, confirmationController);
+
         scanningViewModel.getStateLiveData().observe(this,state -> {
             // TODO handle confirming state
-            if (state == ScanningViewModel.ScanningState.DETECTING || state == ScanningViewModel.ScanningState.CONFIRMING) {
+            if (state == ScanningViewModel.ScanningState.DETECTING) {
                 cameraReticleAnimator.start();
+            } else if (state == ScanningViewModel.ScanningState.CONFIRMING) {
+                graphicOverlay.clear();
+                graphicOverlay.add(loaderReticleGraphic);
+                // start loading animation
+                confirmationController.confirming();
+                scanningViewModel.confirming(confirmationController.getProgress());
             } else {
                 cameraReticleAnimator.cancel();
             }
