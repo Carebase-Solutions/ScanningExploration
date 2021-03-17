@@ -51,9 +51,10 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
     @ExperimentalGetImage
     public void analyze(@NonNull ImageProxy imageProxy) {
         Image mediaImage = imageProxy.getImage();
+        Log.d(TAG,imageProxy.getCropRect().toShortString());
         if (mediaImage != null) {
             InputImage image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
-
+            Log.d(TAG, "width: " + image.getWidth() + " height: " + image.getHeight());
             // Pass image to an ML Kit Vision API
             scanner.process(image)
                 .addOnSuccessListener(new OnSuccessListener<List<Barcode>>() {

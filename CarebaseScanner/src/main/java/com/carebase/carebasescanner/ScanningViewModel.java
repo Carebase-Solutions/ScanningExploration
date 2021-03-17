@@ -8,6 +8,9 @@ import androidx.annotation.Nullable;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.Preview;
+import androidx.camera.core.UseCase;
+import androidx.camera.core.UseCaseGroup;
+import androidx.camera.core.ViewPort;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
@@ -63,10 +66,15 @@ public class ScanningViewModel extends ViewModel {
     private TextAnalyzer textAnalyzer;
     private BarcodeAnalyzer barcodeAnalyzer;
 
+    private Preview preview;
     private ImageAnalysis textAnalysis;
     private ImageAnalysis barcodeAnalysis;
 
+    private ProcessCameraProvider cameraProvider;
+
     public void setupCamera(Context context, LifecycleOwner owner, Preview preview) {
+        this.preview = preview;
+
         // set up analyzers
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         textAnalyzer = new TextAnalyzer(this::onTextResult);
@@ -87,7 +95,7 @@ public class ScanningViewModel extends ViewModel {
 
         cameraProviderFuture.addListener(() -> {
             try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                cameraProvider = cameraProviderFuture.get();
 
                 // select back camera as default
                 CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
@@ -119,7 +127,8 @@ public class ScanningViewModel extends ViewModel {
         else if (state == BarcodeAnalyzer.State.CONFIRMED) {
             stateLiveData.setValue(ScanningState.SEARCHING);
             // stop scanning for barcodes
-            barcodeAnalysis.clearAnalyzer();
+            cameraProvider.unbind(preview);
+            cameraProvider.unbind(barcodeAnalysis);
             scannedBarcodesLiveData.setValue(barcodeList);
             scannedUDILiveData.setValue(udi);
         }

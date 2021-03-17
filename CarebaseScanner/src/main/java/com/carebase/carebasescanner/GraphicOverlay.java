@@ -75,6 +75,11 @@ public class GraphicOverlay extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
+//        if (previewWidth > 0 && previewHeight > 0) {
+//            widthScaleFactor = Integer.valueOf(getWidth()).floatValue() / previewWidth;
+//            heightScaleFactor = Integer.valueOf(getHeight()).floatValue() / previewHeight;
+//        }
+
         synchronized (lock) {
             for (Graphic graphic : graphicList) {
                 graphic.draw(canvas);

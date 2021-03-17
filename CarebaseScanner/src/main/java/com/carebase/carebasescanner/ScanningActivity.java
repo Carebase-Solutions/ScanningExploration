@@ -31,6 +31,7 @@ public class ScanningActivity extends AppCompatActivity {
 
         PreviewView viewFinder = findViewById(R.id.viewFinder);
         graphicOverlay = findViewById(R.id.graphic_overlay);
+        graphicOverlay.setCameraInfo(viewFinder);
 
         // set up preview use case
         Preview preview = new Preview.Builder().build();
@@ -73,8 +74,10 @@ public class ScanningActivity extends AppCompatActivity {
             if (scanningViewModel.getStateLiveData().getValue() == ScanningViewModel.ScanningState.SEARCHING) {
                 // display barcodes
                 for (Barcode barcode : barcodeList) {
-                    //
+                    Log.d(TAG, "Barcode bounding box: x - " + barcode.getBoundingBox().left + ", y - " + barcode.getBoundingBox().top);
+                    graphicOverlay.add(new BarcodeGraphic(graphicOverlay, barcode.getBoundingBox()));
                 }
+                graphicOverlay.postInvalidate();
             }
         });
     }
