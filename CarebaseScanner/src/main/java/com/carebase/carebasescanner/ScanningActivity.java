@@ -1,6 +1,7 @@
 package com.carebase.carebasescanner;
 
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -8,6 +9,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Preview;
 import androidx.camera.view.PreviewView;
+import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -27,7 +29,7 @@ public class ScanningActivity extends AppCompatActivity {
         setContentView(R.layout.activity_scanning);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setNavigationOnClickListener((view) -> finish());
+        toolbar.setNavigationOnClickListener((view) -> onFinish());
 
         PreviewView viewFinder = findViewById(R.id.viewFinder);
         graphicOverlay = findViewById(R.id.graphic_overlay);
@@ -44,6 +46,11 @@ public class ScanningActivity extends AppCompatActivity {
         listenToBarcodeUpdates();
         listenForUDI();
         listenToTextUpdates();
+    }
+
+    private void onFinish() {
+        scanningViewModel.countDownTimer.cancel();
+        finish();
     }
 
     private void startGraphicOverlay() {
@@ -64,6 +71,9 @@ public class ScanningActivity extends AppCompatActivity {
                 // start loading animation
                 confirmationController.confirming();
                 scanningViewModel.confirming(confirmationController.getProgress());
+            } else if (state == ScanningViewModel.ScanningState.TIMEOUT) {
+                graphicOverlay.clear();
+                showTimeoutMessage();
             } else {
                 cameraReticleAnimator.cancel();
             }
@@ -96,4 +106,14 @@ public class ScanningActivity extends AppCompatActivity {
             }
         });
     }
+
+    public void showTimeoutMessage() {
+        Fragment fragment = new TimeoutMessageFragment();
+        getSupportFragmentManager()
+                .beginTransaction()
+                .add(R.id.activity_scanning, fragment, TimeoutMessageFragment.TAG)
+                .addToBackStack(null)
+                .commit();
+    }
+
 }
