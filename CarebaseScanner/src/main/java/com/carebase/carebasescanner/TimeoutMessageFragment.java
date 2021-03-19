@@ -1,6 +1,5 @@
 package com.carebase.carebasescanner;
 
-import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -22,8 +21,11 @@ public class TimeoutMessageFragment extends Fragment {
         Button learnMoreButton = rootView.findViewById(R.id.learnMoreButton);
         Button dismissButton = rootView.findViewById(R.id.dismissButton);
 
+        Bundle bundle = this.getArguments();
+        ScanningViewModel scanningViewModel = (ScanningViewModel) bundle.getSerializable("scanningViewModel");
+
         learnMoreButton.setOnClickListener(view -> learnMore());
-        dismissButton.setOnClickListener(view -> dismiss());
+        dismissButton.setOnClickListener(view -> dismiss(scanningViewModel));
 
         return rootView;
     }
@@ -32,9 +34,8 @@ public class TimeoutMessageFragment extends Fragment {
         // to be implemented
     }
 
-    private void dismiss() {
-        Intent intent = requireActivity().getIntent();
-        requireActivity().finish();
-        startActivity(intent);
+    private void dismiss(ScanningViewModel scanningViewModel) {
+        scanningViewModel.restartUseCase();
+        requireActivity().getSupportFragmentManager().beginTransaction().remove(this).commit();
     }
 }

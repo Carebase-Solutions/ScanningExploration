@@ -20,12 +20,13 @@ import androidx.lifecycle.ViewModel;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.barcode.Barcode;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ScanningViewModel extends ViewModel {
+public class ScanningViewModel extends ViewModel implements Serializable {
     private static final String TAG = ScanningViewModel.class.getSimpleName();
 
     /**
@@ -68,6 +69,10 @@ public class ScanningViewModel extends ViewModel {
     private ImageAnalysis barcodeAnalysis;
 
     private ProcessCameraProvider cameraProvider;
+    private LifecycleOwner owner;
+    private CameraSelector cameraSelector;
+    private Preview preview;
+
     protected CountDownTimer countDownTimer;
     private boolean countDownStarted;
 
@@ -93,9 +98,11 @@ public class ScanningViewModel extends ViewModel {
         cameraProviderFuture.addListener(() -> {
             try {
                 cameraProvider = cameraProviderFuture.get();
+                this.owner = owner;
+                this.preview = preview;
 
                 // select back camera as default
-                CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+                cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
 
                 // unbind use cases before rebinding
                 cameraProvider.unbindAll();
@@ -167,12 +174,12 @@ public class ScanningViewModel extends ViewModel {
     private void startTimeoutCountDown() {
         countDownStarted = true;
         // hardcode 1 minute in ms
-        long timeoutMs = Long.valueOf(6000);
+        long timeoutMs = Long.valueOf(60000);
         // interval is 1 sec
         countDownTimer = new CountDownTimer(timeoutMs, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
-                Log.d("timeout", "seconds remaining: " + millisUntilFinished / 1000);
+//                Log.d("timeout", "seconds remaining: " + millisUntilFinished / 1000);
             }
 
             @Override
@@ -182,11 +189,17 @@ public class ScanningViewModel extends ViewModel {
                 cameraProvider.unbindAll();
             }
         };
-        if (countDownTimer != null) countDownTimer.start();
+        countDownTimer.start();
     }
 
     protected void cancelTimeoutCountDown() {
         countDownStarted = false;
         if (countDownTimer != null) countDownTimer.cancel();
+    }
+
+    protected void restartUseCase() {
+        cancelTimeoutCountDown();
+        // bind use cases to camera
+        cameraProvider.bindToLifecycle(owner, cameraSelector, preview, barcodeAnalysis);
     }
 }

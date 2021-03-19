@@ -1,7 +1,6 @@
 package com.carebase.carebasescanner;
 
 import android.os.Bundle;
-import android.os.CountDownTimer;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -109,6 +108,11 @@ public class ScanningActivity extends AppCompatActivity {
 
     public void showTimeoutMessage() {
         Fragment fragment = new TimeoutMessageFragment();
+
+        Bundle bundle = new Bundle();
+        bundle.putSerializable("scanningViewModel", scanningViewModel);
+        fragment.setArguments(bundle);
+
         getSupportFragmentManager()
                 .beginTransaction()
                 .add(R.id.activity_scanning, fragment, TimeoutMessageFragment.TAG)
