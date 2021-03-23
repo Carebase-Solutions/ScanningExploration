@@ -11,7 +11,6 @@ public class ObjectConfirmationController {
     private final GraphicOverlay graphicOverlay;
 
     private final CountDownTimer countDownTimer;
-    private Integer objectId;
 
     /** Returns the confirmation progress described as a float value in the range of [0, 1].  */
     private float progress = 0f;
@@ -53,7 +52,6 @@ public class ObjectConfirmationController {
 
     public void reset() {
         countDownTimer.cancel();
-        objectId = null;
         progress = 0f;
     }
 }

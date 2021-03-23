@@ -1,6 +1,7 @@
 package com.carebase.carebasescanner;
 
 import android.content.Context;
+import android.os.CountDownTimer;
 import android.util.Log;
 import android.util.Size;
 
@@ -19,6 +20,7 @@ import androidx.lifecycle.ViewModel;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.barcode.Barcode;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -66,6 +68,14 @@ public class ScanningViewModel extends ViewModel {
     private ImageAnalysis textAnalysis;
     private ImageAnalysis barcodeAnalysis;
 
+    private ProcessCameraProvider cameraProvider;
+    private LifecycleOwner owner;
+    private CameraSelector cameraSelector;
+    private Preview preview;
+
+    protected CountDownTimer countDownTimer;
+    private boolean countDownStarted;
+
     public void setupCamera(Context context, LifecycleOwner owner, Preview preview) {
         // set up analyzers
         ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -87,20 +97,24 @@ public class ScanningViewModel extends ViewModel {
 
         cameraProviderFuture.addListener(() -> {
             try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                cameraProvider = cameraProviderFuture.get();
+                this.owner = owner;
+                this.preview = preview;
 
                 // select back camera as default
-                CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+                cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
 
                 // unbind use cases before rebinding
                 cameraProvider.unbindAll();
 
                 // bind use cases to camera
                 cameraProvider.bindToLifecycle(owner, cameraSelector, preview, barcodeAnalysis);
+
             } catch (Exception e) {
                 Log.e(TAG, "Use case binding failed", e);
             }
         }, ContextCompat.getMainExecutor(context));
+
     }
 
     public void onTextResult(List<String> text) {
@@ -110,18 +124,20 @@ public class ScanningViewModel extends ViewModel {
     public void onBarcodeResult(List<Barcode> barcodeList, @Nullable String udi, BarcodeAnalyzer.State state) {
         if (state == BarcodeAnalyzer.State.DETECTING) {
             stateLiveData.setValue(ScanningState.DETECTING);
-        }
-        // partial udi is found
-        else if (state == BarcodeAnalyzer.State.CONFIRMING) {
-            scannedBarcodesLiveData.setValue(barcodeList);
-        }
-        // udi is found
-        else if (state == BarcodeAnalyzer.State.CONFIRMED) {
-            stateLiveData.setValue(ScanningState.CONFIRMING);
-            scannedBarcodesLiveData.setValue(barcodeList);
-            scannedUDILiveData.setValue(udi);
-            barcodeAnalysis.clearAnalyzer();
-
+            if (!countDownStarted) { startTimeoutCountDown(); }
+        } else {
+            cancelTimeoutCountDown();
+            // partial udi is found
+            if (state == BarcodeAnalyzer.State.CONFIRMING) {
+                scannedBarcodesLiveData.setValue(barcodeList);
+            }
+            // udi is found
+            else if (state == BarcodeAnalyzer.State.CONFIRMED) {
+                stateLiveData.setValue(ScanningState.CONFIRMING);
+                scannedBarcodesLiveData.setValue(barcodeList);
+                scannedUDILiveData.setValue(udi);
+                barcodeAnalysis.clearAnalyzer();
+            }
         }
     }
 
@@ -153,5 +169,38 @@ public class ScanningViewModel extends ViewModel {
         if (isConfirmed) {
             stateLiveData.setValue(ScanningState.SEARCHING);
         }
+    }
+
+    private void startTimeoutCountDown() {
+        countDownStarted = true;
+        // hardcode 1 minute in ms
+        long timeoutMs = 60000L;
+        // interval is 1 sec
+        countDownTimer = new CountDownTimer(timeoutMs, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+//                Log.d("timeout", "seconds remaining: " + millisUntilFinished / 1000);
+            }
+
+            @Override
+            public void onFinish() {
+                countDownStarted = false;
+                stateLiveData.setValue(ScanningState.TIMEOUT);
+                cameraProvider.unbindAll();
+            }
+        };
+        countDownTimer.start();
+    }
+
+    protected void cancelTimeoutCountDown() {
+        countDownStarted = false;
+        if (countDownTimer != null) countDownTimer.cancel();
+    }
+
+    protected void restartUseCases() {
+        cancelTimeoutCountDown();
+        stateLiveData.setValue(null);
+        // bind use cases to camera
+        cameraProvider.bindToLifecycle(owner, cameraSelector, preview, barcodeAnalysis);
     }
 }
