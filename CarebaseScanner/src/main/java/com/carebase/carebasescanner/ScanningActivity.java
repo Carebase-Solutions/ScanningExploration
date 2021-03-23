@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Preview;
 import androidx.camera.view.PreviewView;
+import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -28,7 +29,7 @@ public class ScanningActivity extends AppCompatActivity {
         setContentView(R.layout.activity_scanning);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setNavigationOnClickListener((view) -> finish());
+        toolbar.setNavigationOnClickListener((view) -> onFinish());
 
         PreviewView viewFinder = findViewById(R.id.viewFinder);
         graphicOverlay = findViewById(R.id.graphic_overlay);
@@ -47,15 +48,34 @@ public class ScanningActivity extends AppCompatActivity {
         listenToTextUpdates();
     }
 
+    private void onFinish() {
+        scanningViewModel.countDownTimer.cancel();
+        finish();
+    }
+
     private void startGraphicOverlay() {
         cameraReticleAnimator = new CameraReticleAnimator(graphicOverlay);
         ReticleGraphic reticleGraphic = new ReticleGraphic(graphicOverlay,cameraReticleAnimator);
-        graphicOverlay.add(reticleGraphic);
+
+        ObjectConfirmationController confirmationController = new ObjectConfirmationController(graphicOverlay);
+        LoaderReticleGraphic loaderReticleGraphic = new LoaderReticleGraphic(graphicOverlay, confirmationController);
 
         scanningViewModel.getStateLiveData().observe(this,state -> {
             // TODO handle confirming state
-            if (state == ScanningViewModel.ScanningState.DETECTING || state == ScanningViewModel.ScanningState.CONFIRMING) {
+            if (state == ScanningViewModel.ScanningState.DETECTING) {
+                if (!graphicOverlay.contains(reticleGraphic)) {
+                    graphicOverlay.add(reticleGraphic);
+                }
                 cameraReticleAnimator.start();
+            } else if (state == ScanningViewModel.ScanningState.CONFIRMING) {
+                graphicOverlay.clear();
+                graphicOverlay.add(loaderReticleGraphic);
+                // start loading animation
+                confirmationController.confirming();
+                scanningViewModel.confirming(confirmationController.getProgress());
+            } else if (state == ScanningViewModel.ScanningState.TIMEOUT) {
+                graphicOverlay.clear();
+                showTimeoutMessage();
             } else {
                 cameraReticleAnimator.cancel();
             }
@@ -105,4 +125,14 @@ public class ScanningActivity extends AppCompatActivity {
             }
         });
     }
+
+    public void showTimeoutMessage() {
+        Fragment fragment = new TimeoutMessageFragment(scanningViewModel::restartUseCases);
+        getSupportFragmentManager()
+                .beginTransaction()
+                .add(R.id.activity_scanning, fragment, TimeoutMessageFragment.TAG)
+                .addToBackStack(null)
+                .commit();
+    }
+
 }
