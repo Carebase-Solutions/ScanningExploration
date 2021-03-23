@@ -26,7 +26,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ScanningViewModel extends ViewModel implements Serializable {
+public class ScanningViewModel extends ViewModel {
     private static final String TAG = ScanningViewModel.class.getSimpleName();
 
     /**
@@ -174,7 +174,7 @@ public class ScanningViewModel extends ViewModel implements Serializable {
     private void startTimeoutCountDown() {
         countDownStarted = true;
         // hardcode 1 minute in ms
-        long timeoutMs = Long.valueOf(60000);
+        long timeoutMs = 60000L;
         // interval is 1 sec
         countDownTimer = new CountDownTimer(timeoutMs, 1000) {
             @Override
@@ -197,8 +197,9 @@ public class ScanningViewModel extends ViewModel implements Serializable {
         if (countDownTimer != null) countDownTimer.cancel();
     }
 
-    protected void restartUseCase() {
+    protected void restartUseCases() {
         cancelTimeoutCountDown();
+        stateLiveData.setValue(null);
         // bind use cases to camera
         cameraProvider.bindToLifecycle(owner, cameraSelector, preview, barcodeAnalysis);
     }

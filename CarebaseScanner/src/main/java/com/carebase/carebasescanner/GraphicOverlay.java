@@ -45,6 +45,12 @@ public class GraphicOverlay extends View {
         postInvalidate();
     }
 
+    public boolean contains(Graphic graphic) {
+        synchronized (lock) {
+            return graphicList.contains(graphic);
+        }
+    }
+
     public void add(Graphic graphic) {
         synchronized (lock) {
             graphicList.add(graphic);

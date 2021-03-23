@@ -55,7 +55,6 @@ public class ScanningActivity extends AppCompatActivity {
     private void startGraphicOverlay() {
         cameraReticleAnimator = new CameraReticleAnimator(graphicOverlay);
         ReticleGraphic reticleGraphic = new ReticleGraphic(graphicOverlay,cameraReticleAnimator);
-        graphicOverlay.add(reticleGraphic);
 
         ObjectConfirmationController confirmationController = new ObjectConfirmationController(graphicOverlay);
         LoaderReticleGraphic loaderReticleGraphic = new LoaderReticleGraphic(graphicOverlay, confirmationController);
@@ -63,6 +62,9 @@ public class ScanningActivity extends AppCompatActivity {
         scanningViewModel.getStateLiveData().observe(this,state -> {
             // TODO handle confirming state
             if (state == ScanningViewModel.ScanningState.DETECTING) {
+                if (!graphicOverlay.contains(reticleGraphic)) {
+                    graphicOverlay.add(reticleGraphic);
+                }
                 cameraReticleAnimator.start();
             } else if (state == ScanningViewModel.ScanningState.CONFIRMING) {
                 graphicOverlay.clear();
@@ -107,12 +109,7 @@ public class ScanningActivity extends AppCompatActivity {
     }
 
     public void showTimeoutMessage() {
-        Fragment fragment = new TimeoutMessageFragment();
-
-        Bundle bundle = new Bundle();
-        bundle.putSerializable("scanningViewModel", scanningViewModel);
-        fragment.setArguments(bundle);
-
+        Fragment fragment = new TimeoutMessageFragment(scanningViewModel::restartUseCases);
         getSupportFragmentManager()
                 .beginTransaction()
                 .add(R.id.activity_scanning, fragment, TimeoutMessageFragment.TAG)

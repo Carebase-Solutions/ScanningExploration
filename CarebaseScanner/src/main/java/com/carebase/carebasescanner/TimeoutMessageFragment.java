@@ -12,6 +12,15 @@ import android.widget.Button;
 public class TimeoutMessageFragment extends Fragment {
     public static final String TAG = TimeoutMessageFragment.class.getSimpleName();
 
+    public interface OnDismissCallback {
+        void onDismiss();
+    }
+    private final OnDismissCallback onDismissCallback;
+
+    public TimeoutMessageFragment(OnDismissCallback onDismissCallback) {
+        this.onDismissCallback = onDismissCallback;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -21,11 +30,8 @@ public class TimeoutMessageFragment extends Fragment {
         Button learnMoreButton = rootView.findViewById(R.id.learnMoreButton);
         Button dismissButton = rootView.findViewById(R.id.dismissButton);
 
-        Bundle bundle = this.getArguments();
-        ScanningViewModel scanningViewModel = (ScanningViewModel) bundle.getSerializable("scanningViewModel");
-
         learnMoreButton.setOnClickListener(view -> learnMore());
-        dismissButton.setOnClickListener(view -> dismiss(scanningViewModel));
+        dismissButton.setOnClickListener(view -> dismiss());
 
         return rootView;
     }
@@ -34,8 +40,8 @@ public class TimeoutMessageFragment extends Fragment {
         // to be implemented
     }
 
-    private void dismiss(ScanningViewModel scanningViewModel) {
-        scanningViewModel.restartUseCase();
+    private void dismiss() {
+        onDismissCallback.onDismiss();
         requireActivity().getSupportFragmentManager().beginTransaction().remove(this).commit();
     }
 }
