@@ -65,50 +65,30 @@ public class ScanningViewModel extends ViewModel {
     private TextAnalyzer textAnalyzer;
     private BarcodeAnalyzer barcodeAnalyzer;
 
-    private ImageAnalysis textAnalysis;
-    private ImageAnalysis barcodeAnalysis;
+    private final ImageAnalysis textAnalysis = new ImageAnalysis.Builder()
+            .setTargetResolution(new Size(640,480))
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build();
+    private final ImageAnalysis barcodeAnalysis = new ImageAnalysis.Builder()
+            .setTargetResolution(new Size(640,480))
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build();
+
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     private ProcessCameraProvider cameraProvider;
-    private LifecycleOwner owner;
-    private CameraSelector cameraSelector;
-    private Preview preview;
+    private final CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
 
     protected CountDownTimer countDownTimer;
     private boolean countDownStarted;
 
     public void setupCamera(Context context, LifecycleOwner owner, Preview preview) {
-        // set up analyzers
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        textAnalyzer = new TextAnalyzer(this::onTextResult);
-        textAnalysis = new ImageAnalysis.Builder()
-                .setTargetResolution(new Size(640,480))
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build();
-        textAnalysis.setAnalyzer(executorService, textAnalyzer);
-
-        barcodeAnalyzer = new BarcodeAnalyzer(this::onBarcodeResult);
-        barcodeAnalysis =  new ImageAnalysis.Builder()
-                .setTargetResolution(new Size(640,480))
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build();
-        barcodeAnalysis.setAnalyzer(executorService,barcodeAnalyzer);
 
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(context);
-
         cameraProviderFuture.addListener(() -> {
             try {
                 cameraProvider = cameraProviderFuture.get();
-                this.owner = owner;
-                this.preview = preview;
-
-                // select back camera as default
-                cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
-
-                // unbind use cases before rebinding
-                cameraProvider.unbindAll();
-
-                // bind use cases to camera
-                cameraProvider.bindToLifecycle(owner, cameraSelector, preview, barcodeAnalysis);
+                restartUseCases(owner,preview);
 
             } catch (Exception e) {
                 Log.e(TAG, "Use case binding failed", e);
@@ -121,22 +101,18 @@ public class ScanningViewModel extends ViewModel {
         scannedTextLiveData.setValue(text);
     }
 
-    public void onBarcodeResult(List<Barcode> barcodeList, @Nullable String udi, BarcodeAnalyzer.State state) {
-        if (state == BarcodeAnalyzer.State.DETECTING) {
+    public void onBarcodeResult(List<Barcode> barcodeList, @Nullable String udi) {
+        if (barcodeList.isEmpty()) {
             stateLiveData.setValue(ScanningState.DETECTING);
             if (!countDownStarted) { startTimeoutCountDown(); }
         } else {
             cancelTimeoutCountDown();
-            // partial udi is found
-            if (state == BarcodeAnalyzer.State.CONFIRMING) {
-                scannedBarcodesLiveData.setValue(barcodeList);
-            }
+            scannedBarcodesLiveData.setValue(barcodeList);
             // udi is found
-            else if (state == BarcodeAnalyzer.State.CONFIRMED) {
-                stateLiveData.setValue(ScanningState.CONFIRMING);
-                scannedBarcodesLiveData.setValue(barcodeList);
+            if (udi != null) {
                 scannedUDILiveData.setValue(udi);
-                barcodeAnalysis.clearAnalyzer();
+                cameraProvider.unbind(barcodeAnalysis);
+                stateLiveData.setValue(ScanningState.SEARCHING);
             }
         }
     }
@@ -155,13 +131,6 @@ public class ScanningViewModel extends ViewModel {
 
     public LiveData<ScanningState> getStateLiveData() {
         return stateLiveData;
-    }
-
-    @Override
-    protected void onCleared() {
-        super.onCleared();
-        textAnalyzer.destroy();
-        barcodeAnalyzer.destroy();
     }
 
     public void confirming(float progress) {
@@ -197,10 +166,30 @@ public class ScanningViewModel extends ViewModel {
         if (countDownTimer != null) countDownTimer.cancel();
     }
 
-    protected void restartUseCases() {
+    protected void clearUseCases() {
+        if (cameraProvider != null) {
+            barcodeAnalyzer.destroy();
+            barcodeAnalyzer = null;
+            barcodeAnalysis.clearAnalyzer();
+
+            cameraProvider.unbindAll();
+            cancelTimeoutCountDown();
+        }
+
+    }
+
+    protected void restartUseCases(LifecycleOwner owner, Preview preview) {
         cancelTimeoutCountDown();
         stateLiveData.setValue(null);
-        // bind use cases to camera
-        cameraProvider.bindToLifecycle(owner, cameraSelector, preview, barcodeAnalysis);
+        if (cameraProvider != null) {
+            cameraProvider.unbindAll();
+
+            barcodeAnalyzer = new BarcodeAnalyzer(this::onBarcodeResult);
+            barcodeAnalysis.setAnalyzer(executorService,barcodeAnalyzer);
+
+            // bind use cases to camera
+            cameraProvider.bindToLifecycle(owner, cameraSelector, preview, barcodeAnalysis);
+        }
+
     }
 }

@@ -14,12 +14,14 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.mlkit.vision.barcode.Barcode;
 import java.util.ArrayList;
+import java.util.List;
 
 public class ScanningActivity extends AppCompatActivity {
     private static final String TAG = ScanningActivity.class.getSimpleName();
 
     private ScanningViewModel scanningViewModel;
 
+    private Preview preview;
     private GraphicOverlay graphicOverlay;
     private CameraReticleAnimator cameraReticleAnimator;
 
@@ -35,7 +37,7 @@ public class ScanningActivity extends AppCompatActivity {
         graphicOverlay = findViewById(R.id.graphic_overlay);
 
         // set up preview use case
-        Preview preview = new Preview.Builder().build();
+        preview = new Preview.Builder().build();
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
         scanningViewModel = new ViewModelProvider(this).get(ScanningViewModel.class);
@@ -46,6 +48,18 @@ public class ScanningActivity extends AppCompatActivity {
         listenToBarcodeUpdates();
         listenForUDI();
         listenToTextUpdates();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        scanningViewModel.restartUseCases(this,preview);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        scanningViewModel.clearUseCases();
     }
 
     private void onFinish() {
@@ -61,7 +75,6 @@ public class ScanningActivity extends AppCompatActivity {
         LoaderReticleGraphic loaderReticleGraphic = new LoaderReticleGraphic(graphicOverlay, confirmationController);
 
         scanningViewModel.getStateLiveData().observe(this,state -> {
-            // TODO handle confirming state
             if (state == ScanningViewModel.ScanningState.DETECTING) {
                 if (!graphicOverlay.contains(reticleGraphic)) {
                     graphicOverlay.add(reticleGraphic);
@@ -73,6 +86,19 @@ public class ScanningActivity extends AppCompatActivity {
                 // start loading animation
                 confirmationController.confirming();
                 scanningViewModel.confirming(confirmationController.getProgress());
+            } else if (state == ScanningViewModel.ScanningState.SEARCHING) {
+                List<Barcode> barcodeList = scanningViewModel.getScannedBarcodeLiveData().getValue();
+                if (barcodeList != null) {
+                    List<BarcodeField> barcodeFieldList = new ArrayList<>();
+                    for (Barcode barcode : barcodeList) {
+                        if (barcode != null) {
+                            barcodeFieldList.add(new BarcodeField("Scanned Barcode", barcode.getDisplayValue()));
+                        }
+                    }
+                    barcodeFieldList.add(new BarcodeField("UDI", scanningViewModel.getScannedUDILiveData().getValue()));
+                    BarcodeResultFragment.Companion.show(getSupportFragmentManager(), barcodeFieldList, () -> scanningViewModel.restartUseCases(this,preview));
+                    scanningViewModel.clearUseCases();
+                }
             } else if (state == ScanningViewModel.ScanningState.TIMEOUT) {
                 graphicOverlay.clear();
                 showTimeoutMessage();
@@ -91,29 +117,7 @@ public class ScanningActivity extends AppCompatActivity {
 
     private void listenToBarcodeUpdates() {
         scanningViewModel.getScannedBarcodeLiveData().observe(this,(barcodeList) -> {
-            for (Barcode barcode : barcodeList) {
-                if (barcode != null) {
-                    ArrayList barcodeFieldList = new ArrayList<BarcodeField>();
-                    barcodeFieldList.add(new BarcodeField("Raw Value", barcode.getRawValue()));
-                    BarcodeResultFragment.Companion.show(getSupportFragmentManager(), barcodeFieldList);
-                }
-            }
-//            if (scanningViewModel.getStateLiveData().getValue() == ScanningViewModel.ScanningState.SEARCHING) {
-//                // display barcodes
-//                for (Barcode barcode : barcodeList) {
-//                    //
-//                }
-//            }
-//            if (scanningViewModel.getStateLiveData().getValue() == ScanningViewModel.ScanningState.DETECTED) {
-//                // display barcodes
-//                for (Barcode barcode : barcodeList) {
-//                    if (barcode != null) {
-//                        ArrayList barcodeFieldList = new ArrayList<BarcodeField>();
-//                        barcodeFieldList.add(new BarcodeField("Raw Value", barcode.getRawValue()));
-//                        BarcodeResultFragment.Companion.show(getSupportFragmentManager(), barcodeFieldList);
-//                    }
-//                }
-//            }
+
         });
     }
 
@@ -127,7 +131,7 @@ public class ScanningActivity extends AppCompatActivity {
     }
 
     public void showTimeoutMessage() {
-        Fragment fragment = new TimeoutMessageFragment(scanningViewModel::restartUseCases);
+        Fragment fragment = new TimeoutMessageFragment(() -> scanningViewModel.restartUseCases(this,preview));
         getSupportFragmentManager()
                 .beginTransaction()
                 .add(R.id.activity_scanning, fragment, TimeoutMessageFragment.TAG)

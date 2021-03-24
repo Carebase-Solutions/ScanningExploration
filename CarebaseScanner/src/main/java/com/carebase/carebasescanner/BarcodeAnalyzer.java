@@ -26,7 +26,7 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
     private static final String TAG = BarcodeAnalyzer.class.getSimpleName();
 
     public interface BarcodeAnalyzerListener {
-        void update(List<Barcode> barcodeList, @Nullable String udi, State state);
+        void update(List<Barcode> barcodeList, @Nullable String udi);
     }
 
     private final BarcodeAnalyzerListener barcodeAnalyzerListener;
@@ -35,12 +35,6 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
 
     private final List<Barcode> udiBarcodes = new ArrayList<>();
     private final String[] udi = new String[]{null,null};
-
-    public enum State {
-        DETECTING,
-        CONFIRMING,
-        CONFIRMED,
-    }
 
     public BarcodeAnalyzer(BarcodeAnalyzerListener barcodeAnalyzerListener) {
         this.barcodeAnalyzerListener = barcodeAnalyzerListener;
@@ -83,7 +77,7 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
             Log.d(TAG,"Scanned: " + b);
             if (isUDI(b)) {
                 udiBarcodes.add(barcode);
-                barcodeAnalyzerListener.update(udiBarcodes, b, State.CONFIRMED);
+                barcodeAnalyzerListener.update(udiBarcodes, b);
                 return;
             }
 
@@ -103,17 +97,14 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
             if (isHIBCCDI(udi[0]) && isHIBCCPI(udi[1])){
                 String udi = this.udi[0] + "/" + this.udi[1].substring(1);
                 if (isHIBCCUDI(udi)) {
-                    barcodeAnalyzerListener.update(udiBarcodes, udi, State.CONFIRMED);
+                    barcodeAnalyzerListener.update(udiBarcodes, udi);
                 }
             }
             if (isGS1UDI(udi[0] + udi[1])) {
-                barcodeAnalyzerListener.update(udiBarcodes, udi[0] + udi[1], State.CONFIRMED);
+                barcodeAnalyzerListener.update(udiBarcodes, udi[0] + udi[1]);
             }
         }
-        else if (udi[0] != null || udi[1] != null) {
-            barcodeAnalyzerListener.update(udiBarcodes, null, State.CONFIRMING);
-        }
-        barcodeAnalyzerListener.update(udiBarcodes,null, State.DETECTING);
+        barcodeAnalyzerListener.update(udiBarcodes,null);
     }
 
     private boolean isDI(String barcode) {

@@ -12,7 +12,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
-class BarcodeResultFragment : BottomSheetDialogFragment() {
+interface OnDismissCallback {
+    fun onDismiss()
+}
+
+class BarcodeResultFragment(val onDismissCallback: OnDismissCallback) : BottomSheetDialogFragment() {
 
     override fun onCreateView(
             layoutInflater: LayoutInflater,
@@ -20,7 +24,6 @@ class BarcodeResultFragment : BottomSheetDialogFragment() {
             bundle: Bundle?
     ): View {
         val view = layoutInflater.inflate(R.layout.barcode_bottom_sheet, viewGroup)
-
         val arguments = arguments
         val barcodeFieldList: List<BarcodeField> =
                 if (arguments?.containsKey(ARG_BARCODE_FIELD_LIST) == true) {
@@ -40,9 +43,8 @@ class BarcodeResultFragment : BottomSheetDialogFragment() {
 
     override fun onDismiss(dialogInterface: DialogInterface) {
         // Back to working state after the bottom sheet is dismissed.
-        // Do this once ScanningViewModel has setState method
-        //ViewModelProvider(activity).get(ScanningViewModel::class.java).setWorkflowState(ScanningViewModel.DETECTING)
         super.onDismiss(dialogInterface)
+        onDismissCallback.onDismiss();
     }
 
     companion object {
@@ -50,8 +52,8 @@ class BarcodeResultFragment : BottomSheetDialogFragment() {
         private const val TAG = "BarcodeResultFragment"
         private const val ARG_BARCODE_FIELD_LIST = "arg_barcode_field_list"
 
-        fun show(fragmentManager: FragmentManager, barcodeFieldArrayList: List<BarcodeField>) {
-            val barcodeResultFragment = BarcodeResultFragment()
+        fun show(fragmentManager: FragmentManager, barcodeFieldArrayList: List<BarcodeField>, onDismissCallback: OnDismissCallback) {
+            val barcodeResultFragment = BarcodeResultFragment(onDismissCallback)
             val bundle = Bundle()
             bundle.putParcelableArrayList(ARG_BARCODE_FIELD_LIST, ArrayList(barcodeFieldArrayList))
             barcodeResultFragment.arguments = bundle
