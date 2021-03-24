@@ -133,6 +133,10 @@ public class ScanningViewModel extends ViewModel {
         return stateLiveData;
     }
 
+    public void setState(ScanningState state) {
+        stateLiveData.setValue(state);
+    }
+
     public void confirming(float progress) {
         boolean isConfirmed = (progress == 1f);
         if (isConfirmed) {

@@ -12,9 +12,6 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.mlkit.vision.barcode.Barcode;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ScanningActivity extends AppCompatActivity {
     private static final String TAG = ScanningActivity.class.getSimpleName();
@@ -87,30 +84,19 @@ public class ScanningActivity extends AppCompatActivity {
                 confirmationController.confirming();
                 scanningViewModel.confirming(confirmationController.getProgress());
             } else if (state == ScanningViewModel.ScanningState.SEARCHING) {
-                List<Barcode> barcodeList = scanningViewModel.getScannedBarcodeLiveData().getValue();
-                if (barcodeList != null) {
-                    List<BarcodeField> barcodeFieldList = new ArrayList<>();
-                    for (Barcode barcode : barcodeList) {
-                        if (barcode != null) {
-                            barcodeFieldList.add(new BarcodeField("Scanned Barcode", barcode.getDisplayValue()));
-                        }
-                    }
-                    barcodeFieldList.add(new BarcodeField("UDI", scanningViewModel.getScannedUDILiveData().getValue()));
-                    BarcodeResultFragment.Companion.show(getSupportFragmentManager(), barcodeFieldList, () -> scanningViewModel.restartUseCases(this,preview));
-                    scanningViewModel.clearUseCases();
+                String scannedUDI = scanningViewModel.getScannedUDILiveData().getValue();
+                if (scannedUDI != null) {
+                    showBottomSheet(scannedUDI);
                 }
             } else if (state == ScanningViewModel.ScanningState.TIMEOUT) {
                 graphicOverlay.clear();
                 showTimeoutMessage();
-            } else {
-                cameraReticleAnimator.cancel();
             }
         });
     }
 
     private void listenForUDI() {
         scanningViewModel.getScannedUDILiveData().observe(this, udi -> {
-            Toast.makeText(this,udi,Toast.LENGTH_LONG).show();
             Log.d(TAG,"UDI: " + udi);
         });
     }
@@ -128,6 +114,17 @@ public class ScanningActivity extends AppCompatActivity {
                 Log.d("textAnalyze", text);
             }
         });
+    }
+
+    /**
+     * Default implementation
+     * The application using this library should override this method and show its own custom
+     * bottom sheet fragment
+     * @param udi The udi that was recognized
+     */
+    public void showBottomSheet(String udi) {
+        BarcodeResultFragment.Companion.show(getSupportFragmentManager(), udi, () -> scanningViewModel.restartUseCases(this,preview));
+        scanningViewModel.clearUseCases();
     }
 
     public void showTimeoutMessage() {

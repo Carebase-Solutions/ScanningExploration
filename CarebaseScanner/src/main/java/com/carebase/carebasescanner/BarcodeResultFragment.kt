@@ -2,14 +2,13 @@ package com.carebase.carebasescanner
 
 import android.content.DialogInterface
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.fragment.app.FragmentManager
-import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 interface OnDismissCallback {
@@ -23,20 +22,19 @@ class BarcodeResultFragment(val onDismissCallback: OnDismissCallback) : BottomSh
             viewGroup: ViewGroup?,
             bundle: Bundle?
     ): View {
-        val view = layoutInflater.inflate(R.layout.barcode_bottom_sheet, viewGroup)
-        val arguments = arguments
-        val barcodeFieldList: List<BarcodeField> =
-                if (arguments?.containsKey(ARG_BARCODE_FIELD_LIST) == true) {
-                    arguments.getParcelableArrayList(ARG_BARCODE_FIELD_LIST) ?: ArrayList()
-                } else {
-                    Log.e(TAG, "No barcode field list passed in!")
-                    ArrayList()
-                }
+        val view = layoutInflater.inflate(R.layout.bottom_sheet, viewGroup)
+        val fieldLayout = view.findViewById<View>(R.id.udi_field_container)
+        val textView = view.findViewById<TextView>(R.id.udi_field_value)
+        val progressBar = view.findViewById<ProgressBar>(R.id.progress_indicator);
+        val scanningViewModel = ViewModelProvider(requireActivity()).get(ScanningViewModel::class.java)
 
-        val recyclerView = view.findViewById<RecyclerView>(R.id.barcode_field_recycler_view)
-        recyclerView.setHasFixedSize(true)
-        recyclerView.layoutManager = LinearLayoutManager(activity)
-        recyclerView.adapter = BarcodeFieldAdapter(barcodeFieldList)
+        val arguments = arguments
+        val udi = arguments?.getString(ARG_UDI_FIELD)
+        textView.text = udi
+        fieldLayout.visibility = View.VISIBLE
+        progressBar.visibility = View.GONE
+
+        scanningViewModel.setState(ScanningViewModel.ScanningState.DETECTED)
 
         return view
     }
@@ -50,12 +48,12 @@ class BarcodeResultFragment(val onDismissCallback: OnDismissCallback) : BottomSh
     companion object {
 
         private const val TAG = "BarcodeResultFragment"
-        private const val ARG_BARCODE_FIELD_LIST = "arg_barcode_field_list"
+        private const val ARG_UDI_FIELD = "arg_udi_field"
 
-        fun show(fragmentManager: FragmentManager, barcodeFieldArrayList: List<BarcodeField>, onDismissCallback: OnDismissCallback) {
+        fun show(fragmentManager: FragmentManager, udi: String, onDismissCallback: OnDismissCallback) {
             val barcodeResultFragment = BarcodeResultFragment(onDismissCallback)
             val bundle = Bundle()
-            bundle.putParcelableArrayList(ARG_BARCODE_FIELD_LIST, ArrayList(barcodeFieldArrayList))
+            bundle.putString(ARG_UDI_FIELD, udi)
             barcodeResultFragment.arguments = bundle
             barcodeResultFragment.show(fragmentManager, TAG)
         }
