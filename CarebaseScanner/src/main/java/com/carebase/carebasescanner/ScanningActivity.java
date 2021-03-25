@@ -12,13 +12,13 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.mlkit.vision.barcode.Barcode;
 
 public class ScanningActivity extends AppCompatActivity {
     private static final String TAG = ScanningActivity.class.getSimpleName();
 
     private ScanningViewModel scanningViewModel;
 
+    private Preview preview;
     private GraphicOverlay graphicOverlay;
     private CameraReticleAnimator cameraReticleAnimator;
 
@@ -34,7 +34,7 @@ public class ScanningActivity extends AppCompatActivity {
         graphicOverlay = findViewById(R.id.graphic_overlay);
 
         // set up preview use case
-        Preview preview = new Preview.Builder().build();
+        preview = new Preview.Builder().build();
         preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
 
         scanningViewModel = new ViewModelProvider(this).get(ScanningViewModel.class);
@@ -45,6 +45,18 @@ public class ScanningActivity extends AppCompatActivity {
         listenToBarcodeUpdates();
         listenForUDI();
         listenToTextUpdates();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        scanningViewModel.restartUseCases(this,preview);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        scanningViewModel.clearUseCases();
     }
 
     private void onFinish() {
@@ -60,7 +72,6 @@ public class ScanningActivity extends AppCompatActivity {
         LoaderReticleGraphic loaderReticleGraphic = new LoaderReticleGraphic(graphicOverlay, confirmationController);
 
         scanningViewModel.getStateLiveData().observe(this,state -> {
-            // TODO handle confirming state
             if (state == ScanningViewModel.ScanningState.DETECTING) {
                 if (!graphicOverlay.contains(reticleGraphic)) {
                     graphicOverlay.add(reticleGraphic);
@@ -72,30 +83,27 @@ public class ScanningActivity extends AppCompatActivity {
                 // start loading animation
                 confirmationController.confirming();
                 scanningViewModel.confirming(confirmationController.getProgress());
+            } else if (state == ScanningViewModel.ScanningState.SEARCHING) {
+                String scannedUDI = scanningViewModel.getScannedUDILiveData().getValue();
+                if (scannedUDI != null) {
+                    showBottomSheet(scannedUDI);
+                }
             } else if (state == ScanningViewModel.ScanningState.TIMEOUT) {
                 graphicOverlay.clear();
                 showTimeoutMessage();
-            } else {
-                cameraReticleAnimator.cancel();
             }
         });
     }
 
     private void listenForUDI() {
         scanningViewModel.getScannedUDILiveData().observe(this, udi -> {
-            Toast.makeText(this,udi,Toast.LENGTH_LONG).show();
             Log.d(TAG,"UDI: " + udi);
         });
     }
 
     private void listenToBarcodeUpdates() {
         scanningViewModel.getScannedBarcodeLiveData().observe(this,(barcodeList) -> {
-            if (scanningViewModel.getStateLiveData().getValue() == ScanningViewModel.ScanningState.SEARCHING) {
-                // display barcodes
-                for (Barcode barcode : barcodeList) {
-                    //
-                }
-            }
+
         });
     }
 
@@ -108,8 +116,19 @@ public class ScanningActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Default implementation
+     * The application using this library should override this method and show its own custom
+     * bottom sheet fragment
+     * @param udi The udi that was recognized
+     */
+    public void showBottomSheet(String udi) {
+        BarcodeResultFragment.Companion.show(getSupportFragmentManager(), udi, () -> scanningViewModel.restartUseCases(this,preview));
+        scanningViewModel.clearUseCases();
+    }
+
     public void showTimeoutMessage() {
-        Fragment fragment = new TimeoutMessageFragment(scanningViewModel::restartUseCases);
+        Fragment fragment = new TimeoutMessageFragment(() -> scanningViewModel.restartUseCases(this,preview));
         getSupportFragmentManager()
                 .beginTransaction()
                 .add(R.id.activity_scanning, fragment, TimeoutMessageFragment.TAG)
