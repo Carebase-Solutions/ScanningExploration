@@ -141,9 +141,9 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
         return matcher.matches();
     }
 
-    private static final String HIBCCDIREGEX = "\\+[\\w^_]{6,23}";
+    private static final String HIBCCDIREGEX = "\\+[A-Za-z0-9]{6,23}";
     private static final String HIBCCPIREGEX = "\\+([^_/]{6,30})(/([^_/]{6,30})?)*";
-    private static final String HIBCCUDIREGEX = "\\+[\\w^_]{6,23}(/([^_/]{6,30})?)+";
+    private static final String HIBCCUDIREGEX = "\\+[A-Za-z0-9]{{6,23}(/([^_/]{6,30})?)+";
     private final Pattern HIBCCDIPATTERN = Pattern.compile(HIBCCDIREGEX);
     private final Pattern HIBCCPIPATTERN = Pattern.compile(HIBCCPIREGEX);
     private final Pattern HIBCCUDIPATTERN = Pattern.compile(HIBCCUDIREGEX);
