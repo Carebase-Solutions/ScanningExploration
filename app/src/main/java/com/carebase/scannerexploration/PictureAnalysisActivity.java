@@ -1,5 +1,6 @@
 package com.carebase.scannerexploration;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
@@ -23,19 +24,36 @@ import android.widget.ImageView;
 import android.widget.Toast;
 import android.widget.Toolbar;
 
+import com.google.android.gms.auth.api.credentials.Credential;
+import com.google.android.gms.auth.api.credentials.CredentialRequest;
+import com.google.android.gms.auth.api.credentials.CredentialRequestResponse;
+import com.google.android.gms.auth.api.credentials.Credentials;
+import com.google.android.gms.auth.api.credentials.CredentialsClient;
+import com.google.android.gms.auth.api.credentials.IdentityProviders;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.MaterialToolbar;
 
 import java.io.File;
 import java.io.IOException;
 
 public class PictureAnalysisActivity extends AppCompatActivity {
-
     public final static int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 1034;
     public String photoFileName = "photo.jpg";
     File photoFile;
 
     private Button analyzeButton;
     private ImageView ivPreview;
+
+    protected final static int RC_SIGNIN = 100;
+    protected GoogleSignInClient googleSignInClient;
+    private GoogleSignInAccount account;
+    private Credential credential = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +64,18 @@ public class PictureAnalysisActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener((view) -> finish());
         analyzeButton = findViewById(R.id.analyze_button);
         analyzeButton.setOnClickListener(this::onLaunchAnalyzer);
-        ivPreview = (ImageView) findViewById(R.id.image_view_preview);
+        ivPreview = findViewById(R.id.image_view_preview);
+
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+        googleSignInClient = GoogleSignIn.getClient(this, gso);
+        account = GoogleSignIn.getLastSignedInAccount(this);
+
+        if (account == null) {
+            Fragment fragment = new SignInFragment();
+            getSupportFragmentManager().beginTransaction().add(R.id.constraint_layout,fragment).addToBackStack(null).commit();
+        }
     }
 
     @Override
@@ -67,6 +96,29 @@ public class PictureAnalysisActivity extends AppCompatActivity {
             } else { // Result was a failure
                 Toast.makeText(this, "Picture wasn't taken!", Toast.LENGTH_SHORT).show();
             }
+        } else if (requestCode == RC_SIGNIN){
+            getSupportFragmentManager().popBackStack();
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
+        }
+    }
+
+    protected void onLaunchSignIn(View v) {
+        Intent signInIntent = googleSignInClient.getSignInIntent();
+        startActivityForResult(signInIntent, RC_SIGNIN);
+    }
+
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+
+            // Signed in successfully, show authenticated UI.
+            Toast.makeText(this, account.getEmail() + " Signed In", Toast.LENGTH_SHORT).show();
+        } catch (ApiException e) {
+            // The ApiException status code indicates the detailed failure reason.
+            // Please refer to the GoogleSignInStatusCodes class reference for more information.
+            Log.e(PictureAnalysisActivity.class.getSimpleName(), "signInResult:failed code=" + e.getStatusCode());
+            Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
         }
     }
 

@@ -1,9 +1,11 @@
 package com.carebase.scannerexploration;
 
 import android.content.Context;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -16,17 +18,23 @@ public class TextAnalyzerLineAdapter extends RecyclerView.Adapter<TextAnalyzerLi
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
         public TextView textView;
+        public CheckBox checkBox;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             textView = itemView.findViewById(R.id.text_view);
+            checkBox = itemView.findViewById(R.id.checkbox);
         }
     }
 
-    private List<String> textList;
+    private List<Pair<String,Boolean>> textList;
 
-    public void setTextList(List<String> textList) {
+    public void setTextList(List<Pair<String,Boolean>> textList) {
         this.textList = textList;
+    }
+
+    public List<Pair<String, Boolean>> getTextList() {
+        return textList;
     }
 
     @NonNull
@@ -40,8 +48,14 @@ public class TextAnalyzerLineAdapter extends RecyclerView.Adapter<TextAnalyzerLi
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        String line = textList.get(position);
+        Pair<String,Boolean> text = textList.get(position);
+        String line = text.first;
         holder.textView.setText(line);
+        holder.checkBox.setOnClickListener(view -> {
+            Pair<String,Boolean> newText = new Pair<>(text.first,!text.second);
+            textList.remove(position);
+            textList.add(position,newText);
+        });
     }
 
     @Override
