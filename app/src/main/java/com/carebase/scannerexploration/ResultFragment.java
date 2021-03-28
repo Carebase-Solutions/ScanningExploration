@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.sheets.v4.SheetsScopes;
@@ -30,6 +31,7 @@ import com.google.mlkit.vision.text.TextRecognizer;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -45,6 +47,8 @@ public class ResultFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_analyzer, container, false);
 
+        PictureAnalysisActivity parent = (PictureAnalysisActivity) requireActivity();
+
         RecyclerView recyclerView = rootView.findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         lineAdapter = new TextAnalyzerLineAdapter();
@@ -52,7 +56,7 @@ public class ResultFragment extends Fragment {
 
         MaterialButton confirmButton = rootView.findViewById(R.id.confirm_button);
         confirmButton.setEnabled(false);
-        confirmButton.setOnClickListener(view -> onSaveAnnotations());
+        confirmButton.setOnClickListener(view -> parent.onSaveAnnotations(lineAdapter.getTextList()));
 
         MaterialToolbar toolbar = rootView.findViewById(R.id.toolbar);
         toolbar.setNavigationOnClickListener((view) -> requireActivity().getSupportFragmentManager().popBackStack());
@@ -88,36 +92,6 @@ public class ResultFragment extends Fragment {
                     Toast.makeText(getContext(), "Image processing failed", Toast.LENGTH_LONG).show();
                 });
         return rootView;
-    }
-
-    private void onSaveAnnotations() {
-//        try {
-//            final NetHttpTransport HTTP_TRANSPORT = new com.google.api.client.http.javanet.NetHttpTransport();
-//            Credential credential = getCredentials(HTTP_TRANSPORT);
-//            if (credential == null) {
-//                return;
-//            }
-//            Sheets service = new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
-//                    .setApplicationName(APPLICATION_NAME)
-//                    .build();
-//
-//
-//            List<List<Object>> values = new ArrayList<>();
-//            for (Pair<String,Boolean> line : lineAdapter.getTextList()) {
-//                values.add(Arrays.asList(line.first,line.second));
-//            }
-//
-//            ValueRange body = new ValueRange()
-//                    .setValues(values);
-//            String range = "Sheet1!1:2";
-//            UpdateValuesResponse result =
-//                    service.spreadsheets().values().update(SPREADSHEET_ID, range, body)
-//                            .setValueInputOption("RAW")
-//                            .execute();
-//            Log.d(ResultFragment.class.getSimpleName(),result.getUpdatedCells().toString() + " cells updated.");
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
     }
 
 

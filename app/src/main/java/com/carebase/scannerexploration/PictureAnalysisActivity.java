@@ -1,6 +1,7 @@
 package com.carebase.scannerexploration;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
@@ -13,10 +14,13 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.util.Pair;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -35,12 +39,33 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.services.sheets.v4.Sheets;
+import com.google.api.services.sheets.v4.SheetsScopes;
+import com.google.api.services.sheets.v4.model.AppendCellsRequest;
+import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetRequest;
+import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetResponse;
+import com.google.api.services.sheets.v4.model.CellData;
+import com.google.api.services.sheets.v4.model.ExtendedValue;
+import com.google.api.services.sheets.v4.model.Request;
+import com.google.api.services.sheets.v4.model.RowData;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 public class PictureAnalysisActivity extends AppCompatActivity {
     public final static int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 1034;
@@ -50,10 +75,14 @@ public class PictureAnalysisActivity extends AppCompatActivity {
     private Button analyzeButton;
     private ImageView ivPreview;
 
-    protected final static int RC_SIGNIN = 100;
+    protected final static int RC_SIGN_IN = RESULT_FIRST_USER;
+    private static final String SPREADSHEET_ID = "1p-HSCuDvjvlGrrCCOTpgGBTUNIOeKqQvm9_mCHg4tTk";
+    private Executor executor;
+    private static final Scope SHEET_SCOPE = new Scope(SheetsScopes.SPREADSHEETS);
     protected GoogleSignInClient googleSignInClient;
     private GoogleSignInAccount account;
-    private Credential credential = null;
+    private Sheets service;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,8 +95,11 @@ public class PictureAnalysisActivity extends AppCompatActivity {
         analyzeButton.setOnClickListener(this::onLaunchAnalyzer);
         ivPreview = findViewById(R.id.image_view_preview);
 
+        executor = Executors.newSingleThreadExecutor();
+
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
+                .requestScopes(SHEET_SCOPE)
                 .build();
         googleSignInClient = GoogleSignIn.getClient(this, gso);
         account = GoogleSignIn.getLastSignedInAccount(this);
@@ -75,6 +107,15 @@ public class PictureAnalysisActivity extends AppCompatActivity {
         if (account == null) {
             Fragment fragment = new SignInFragment();
             getSupportFragmentManager().beginTransaction().add(R.id.constraint_layout,fragment).addToBackStack(null).commit();
+        } else {
+            // create Sheets service
+            GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(this, Collections.singleton(SheetsScopes.SPREADSHEETS));
+            credential.setSelectedAccount(account.getAccount());
+            service = new Sheets.Builder(
+                    AndroidHttp.newCompatibleTransport(),
+                    new JacksonFactory(),
+                    credential)
+                    .build();
         }
     }
 
@@ -96,7 +137,7 @@ public class PictureAnalysisActivity extends AppCompatActivity {
             } else { // Result was a failure
                 Toast.makeText(this, "Picture wasn't taken!", Toast.LENGTH_SHORT).show();
             }
-        } else if (requestCode == RC_SIGNIN){
+        } else if (requestCode == RC_SIGN_IN){
             getSupportFragmentManager().popBackStack();
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             handleSignInResult(task);
@@ -105,7 +146,7 @@ public class PictureAnalysisActivity extends AppCompatActivity {
 
     protected void onLaunchSignIn(View v) {
         Intent signInIntent = googleSignInClient.getSignInIntent();
-        startActivityForResult(signInIntent, RC_SIGNIN);
+        startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 
     private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
@@ -114,6 +155,15 @@ public class PictureAnalysisActivity extends AppCompatActivity {
 
             // Signed in successfully, show authenticated UI.
             Toast.makeText(this, account.getEmail() + " Signed In", Toast.LENGTH_SHORT).show();
+
+            // create Sheets service
+            GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(this, Collections.singleton(SheetsScopes.SPREADSHEETS));
+            credential.setSelectedAccount(account.getAccount());
+            service = new Sheets.Builder(
+                    AndroidHttp.newCompatibleTransport(),
+                    new JacksonFactory(),
+                    credential)
+                    .build();
         } catch (ApiException e) {
             // The ApiException status code indicates the detailed failure reason.
             // Please refer to the GoogleSignInStatusCodes class reference for more information.
@@ -241,4 +291,34 @@ public class PictureAnalysisActivity extends AppCompatActivity {
 
         return inSampleSize;
     }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public void onSaveAnnotations(List<Pair<String,Boolean>> data) {
+        // put in thread executor
+        List<RowData> rowData = data.stream().map( d -> new RowData().setValues(
+                Arrays.asList(
+                        new CellData().setUserEnteredValue(new ExtendedValue().setStringValue(d.first)),
+                        new CellData().setUserEnteredValue(new ExtendedValue().setBoolValue(d.second))
+                        ))).collect(Collectors.toList());
+        AppendCellsRequest cellsRequest = new AppendCellsRequest().setSheetId(0).setRows(rowData).setFields("*");
+        Request request = new Request().setAppendCells(cellsRequest);
+        BatchUpdateSpreadsheetRequest batchRequest = new BatchUpdateSpreadsheetRequest().setRequests(Collections.singletonList(request));
+
+        executor.execute(() -> {
+            try {
+                service.spreadsheets().batchUpdate(SPREADSHEET_ID, batchRequest).execute();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        clearImage();
+        Toast.makeText(this,"Saved Annotations",Toast.LENGTH_SHORT).show();
+        getSupportFragmentManager().popBackStack();
+    }
+
+    public void clearImage() {
+        ivPreview.setImageResource(0);
+        analyzeButton.setEnabled(false);
+    }
+
 }
