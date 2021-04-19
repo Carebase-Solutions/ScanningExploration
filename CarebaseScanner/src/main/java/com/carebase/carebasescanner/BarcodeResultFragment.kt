@@ -15,7 +15,7 @@ interface OnDismissCallback {
     fun onDismiss()
 }
 
-class BarcodeResultFragment(val onDismissCallback: OnDismissCallback) : BottomSheetDialogFragment() {
+open class BarcodeResultFragment(val onDismissCallback: OnDismissCallback) : BottomSheetDialogFragment() {
 
     override fun onCreateView(
             layoutInflater: LayoutInflater,
