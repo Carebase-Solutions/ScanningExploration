@@ -171,7 +171,7 @@ public class ScanningViewModel extends ViewModel {
     }
 
     public void clearUseCases() {
-        if (cameraProvider != null) {
+        if (cameraProvider != null && barcodeAnalyzer != null) {
             barcodeAnalyzer.destroy();
             barcodeAnalyzer = null;
             barcodeAnalysis.clearAnalyzer();
