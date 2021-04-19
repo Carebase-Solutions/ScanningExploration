@@ -16,7 +16,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 public class ScanningActivity extends AppCompatActivity {
     private static final String TAG = ScanningActivity.class.getSimpleName();
 
-    private ScanningViewModel scanningViewModel;
+    protected ScanningViewModel scanningViewModel;
 
     private Preview preview;
     private GraphicOverlay graphicOverlay;
