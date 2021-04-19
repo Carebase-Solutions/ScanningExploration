@@ -170,7 +170,7 @@ public class ScanningViewModel extends ViewModel {
         if (countDownTimer != null) countDownTimer.cancel();
     }
 
-    protected void clearUseCases() {
+    public void clearUseCases() {
         if (cameraProvider != null) {
             barcodeAnalyzer.destroy();
             barcodeAnalyzer = null;

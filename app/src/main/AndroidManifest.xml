@@ -29,6 +29,10 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".CustomScanningActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"/>
+
         <activity android:name=".PictureAnalysisActivity"
             android:screenOrientation="portrait"/>
 

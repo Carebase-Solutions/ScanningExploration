@@ -116,6 +116,10 @@ public class ScanningActivity extends AppCompatActivity {
         });
     }
 
+    protected void restartUseCases() {
+        scanningViewModel.restartUseCases(this,preview);
+    }
+
     /**
      * Default implementation
      * The application using this library should override this method and show its own custom
@@ -123,7 +127,7 @@ public class ScanningActivity extends AppCompatActivity {
      * @param udi The udi that was recognized
      */
     public void showBottomSheet(String udi) {
-        BarcodeResultFragment.Companion.show(getSupportFragmentManager(), udi, () -> scanningViewModel.restartUseCases(this,preview));
+        BarcodeResultFragment.Companion.show(getSupportFragmentManager(), udi, this::restartUseCases);
         scanningViewModel.clearUseCases();
     }
 

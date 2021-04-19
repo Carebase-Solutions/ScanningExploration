@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void startLiveScan(View v) {
-        startActivity(new Intent(this, ScanningActivity.class));
+        startActivity(new Intent(this, CustomScanningActivity.class));
     }
 
     public void startPictureScan(View v) {
