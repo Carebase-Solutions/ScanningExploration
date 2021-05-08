@@ -23,15 +23,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
-    public enum BarcodeType {
-        SHIPMENT,
-        DEVICE,
 
-    }
     private static final String TAG = BarcodeAnalyzer.class.getSimpleName();
 
     public interface BarcodeAnalyzerListener {
-        void update(List<Barcode> barcodeList, @Nullable String udi, BarcodeType type);
+        void update(List<Barcode> barcodeList, @Nullable String udi, ScanningViewModel.BarcodeType type);
     }
 
     private final BarcodeAnalyzerListener barcodeAnalyzerListener;
@@ -82,11 +78,11 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
             Log.d(TAG,"Scanned: " + b);
             if (isShippingId(b)) {
                 udiBarcodes.add(barcode);
-                barcodeAnalyzerListener.update(udiBarcodes, b, BarcodeType.SHIPMENT);
+                barcodeAnalyzerListener.update(udiBarcodes, b, ScanningViewModel.BarcodeType.SHIPMENT);
             }
             if (isUDI(b)) {
                 udiBarcodes.add(barcode);
-                barcodeAnalyzerListener.update(udiBarcodes, b, BarcodeType.DEVICE);
+                barcodeAnalyzerListener.update(udiBarcodes, b, ScanningViewModel.BarcodeType.DEVICE);
                 return;
             }
 
@@ -106,11 +102,11 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
             if (isHIBCCDI(udi[0]) && isHIBCCPI(udi[1])){
                 String udi = this.udi[0] + "/" + this.udi[1].substring(1);
                 if (isHIBCCUDI(udi)) {
-                    barcodeAnalyzerListener.update(udiBarcodes, udi, BarcodeType.DEVICE);
+                    barcodeAnalyzerListener.update(udiBarcodes, udi, ScanningViewModel.BarcodeType.DEVICE);
                 }
             }
             if (isGS1UDI(udi[0] + udi[1])) {
-                barcodeAnalyzerListener.update(udiBarcodes, udi[0] + udi[1], BarcodeType.DEVICE);
+                barcodeAnalyzerListener.update(udiBarcodes, udi[0] + udi[1], ScanningViewModel.BarcodeType.DEVICE);
             }
         }
         barcodeAnalyzerListener.update(udiBarcodes,null, null);

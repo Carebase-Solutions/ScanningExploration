@@ -85,9 +85,9 @@ public class ScanningActivity extends AppCompatActivity {
                 scanningViewModel.confirming(confirmationController.getProgress());
             } else if (state == ScanningViewModel.ScanningState.SEARCHING) {
                 String scannedUDI = scanningViewModel.getScannedUDILiveData().getValue().first;
-                BarcodeAnalyzer.BarcodeType type = scanningViewModel.getScannedUDILiveData().getValue().second;
+                ScanningViewModel.BarcodeType type = scanningViewModel.getScannedUDILiveData().getValue().second;
                 if (scannedUDI != null) {
-                    showBottomSheet(scannedUDI, type);
+                    showBottomSheet(scannedUDI, type.toString());
                 }
             } else if (state == ScanningViewModel.ScanningState.TIMEOUT) {
                 graphicOverlay.clear();
@@ -127,7 +127,7 @@ public class ScanningActivity extends AppCompatActivity {
      * bottom sheet fragment
      * @param udi The udi that was recognized
      */
-    public void showBottomSheet(String udi, BarcodeAnalyzer.BarcodeType type) {
+    public void showBottomSheet(String udi, String type) {
         BarcodeResultFragment.Companion.show(getSupportFragmentManager(), udi, type, this::restartUseCases);
         scanningViewModel.clearUseCases();
     }

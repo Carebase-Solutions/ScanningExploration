@@ -58,11 +58,11 @@ open class BarcodeResultFragment(val onDismissCallback: OnDismissCallback) : Bot
         private const val ARG_UDI_FIELD = "arg_udi_field"
         private const val ARG_TYPE_FIELD = "arg_type_field"
 
-        fun show(fragmentManager: FragmentManager, udi: String, type: BarcodeAnalyzer.BarcodeType, onDismissCallback: OnDismissCallback) {
+        fun show(fragmentManager: FragmentManager, udi: String, type: String, onDismissCallback: OnDismissCallback) {
             val barcodeResultFragment = BarcodeResultFragment(onDismissCallback)
             val bundle = Bundle()
             bundle.putString(ARG_UDI_FIELD, udi)
-            bundle.putString(ARG_TYPE_FIELD, type.toString())
+            bundle.putString(ARG_TYPE_FIELD, type)
             barcodeResultFragment.arguments = bundle
             barcodeResultFragment.show(fragmentManager, TAG)
         }

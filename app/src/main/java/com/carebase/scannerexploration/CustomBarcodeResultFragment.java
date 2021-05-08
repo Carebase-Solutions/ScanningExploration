@@ -55,11 +55,11 @@ public class CustomBarcodeResultFragment extends BarcodeResultFragment {
     private final static String ARG_UDI_FIELD = "arg_udi_field";
     private final static String ARG_TYPE_FIELD = "arg_type_field";
 
-    public static void show(FragmentManager fragmentManager, String udi, BarcodeAnalyzer.BarcodeType type, OnDismissCallback onDismissCallback) {
+    public static void show(FragmentManager fragmentManager, String udi, String type, OnDismissCallback onDismissCallback) {
         CustomBarcodeResultFragment customBarcodeResultFragment = new CustomBarcodeResultFragment(onDismissCallback);
         Bundle bundle = new Bundle();
         bundle.putString(ARG_UDI_FIELD, udi);
-        bundle.putString(ARG_TYPE_FIELD, type.toString());
+        bundle.putString(ARG_TYPE_FIELD, type);
         customBarcodeResultFragment.setArguments(bundle);
         customBarcodeResultFragment.show(fragmentManager, TAG);
     }

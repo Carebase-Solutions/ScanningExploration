@@ -30,6 +30,11 @@ import java.util.concurrent.Executors;
 public class ScanningViewModel extends ViewModel {
     private static final String TAG = ScanningViewModel.class.getSimpleName();
 
+    public enum BarcodeType {
+        SHIPMENT,
+        DEVICE
+    }
+
     /**
      * States that the scanner can be in
      */
@@ -60,7 +65,7 @@ public class ScanningViewModel extends ViewModel {
 
     private final MutableLiveData<List<String>> scannedTextLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<Barcode>> scannedBarcodesLiveData = new MutableLiveData<>();
-    private final MutableLiveData<Pair<String, BarcodeAnalyzer.BarcodeType>> scannedUDILiveData = new MutableLiveData<>();
+    private final MutableLiveData<Pair<String, BarcodeType>> scannedUDILiveData = new MutableLiveData<>();
     private final MutableLiveData<ScanningState> stateLiveData = new MutableLiveData<>();
 
     private TextAnalyzer textAnalyzer;
@@ -102,7 +107,7 @@ public class ScanningViewModel extends ViewModel {
         scannedTextLiveData.setValue(text);
     }
 
-    public void onBarcodeResult(List<Barcode> barcodeList, @Nullable String udi, @Nullable BarcodeAnalyzer.BarcodeType type) {
+    public void onBarcodeResult(List<Barcode> barcodeList, @Nullable String udi, @Nullable BarcodeType type) {
         if (barcodeList.isEmpty()) {
             stateLiveData.setValue(ScanningState.DETECTING);
             if (!countDownStarted) { startTimeoutCountDown(); }
@@ -126,7 +131,7 @@ public class ScanningViewModel extends ViewModel {
         return scannedBarcodesLiveData;
     }
 
-    public LiveData<Pair<String, BarcodeAnalyzer.BarcodeType>> getScannedUDILiveData() {
+    public LiveData<Pair<String, BarcodeType>> getScannedUDILiveData() {
         return scannedUDILiveData;
     }
 
