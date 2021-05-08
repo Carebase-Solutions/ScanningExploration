@@ -3,6 +3,7 @@ package com.carebase.carebasescanner;
 import android.content.Context;
 import android.os.CountDownTimer;
 import android.util.Log;
+import android.util.Pair;
 import android.util.Size;
 
 import androidx.annotation.MainThread;
@@ -59,7 +60,7 @@ public class ScanningViewModel extends ViewModel {
 
     private final MutableLiveData<List<String>> scannedTextLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<Barcode>> scannedBarcodesLiveData = new MutableLiveData<>();
-    private final MutableLiveData<String> scannedUDILiveData = new MutableLiveData<>();
+    private final MutableLiveData<Pair<String, BarcodeAnalyzer.BarcodeType>> scannedUDILiveData = new MutableLiveData<>();
     private final MutableLiveData<ScanningState> stateLiveData = new MutableLiveData<>();
 
     private TextAnalyzer textAnalyzer;
@@ -101,7 +102,7 @@ public class ScanningViewModel extends ViewModel {
         scannedTextLiveData.setValue(text);
     }
 
-    public void onBarcodeResult(List<Barcode> barcodeList, @Nullable String udi) {
+    public void onBarcodeResult(List<Barcode> barcodeList, @Nullable String udi, @Nullable BarcodeAnalyzer.BarcodeType type) {
         if (barcodeList.isEmpty()) {
             stateLiveData.setValue(ScanningState.DETECTING);
             if (!countDownStarted) { startTimeoutCountDown(); }
@@ -109,8 +110,8 @@ public class ScanningViewModel extends ViewModel {
             cancelTimeoutCountDown();
             scannedBarcodesLiveData.setValue(barcodeList);
             // udi is found
-            if (udi != null) {
-                scannedUDILiveData.setValue(udi);
+            if (udi != null && type != null) {
+                scannedUDILiveData.setValue(new Pair<>(udi,type));
                 cameraProvider.unbind(barcodeAnalysis);
                 stateLiveData.setValue(ScanningState.SEARCHING);
             }
@@ -125,7 +126,7 @@ public class ScanningViewModel extends ViewModel {
         return scannedBarcodesLiveData;
     }
 
-    public LiveData<String> getScannedUDILiveData() {
+    public LiveData<Pair<String, BarcodeAnalyzer.BarcodeType>> getScannedUDILiveData() {
         return scannedUDILiveData;
     }
 

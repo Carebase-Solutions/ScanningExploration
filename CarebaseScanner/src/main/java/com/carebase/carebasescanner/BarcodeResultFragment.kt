@@ -23,15 +23,22 @@ open class BarcodeResultFragment(val onDismissCallback: OnDismissCallback) : Bot
             bundle: Bundle?
     ): View {
         val view = layoutInflater.inflate(R.layout.bottom_sheet, viewGroup)
-        val fieldLayout = view.findViewById<View>(R.id.udi_field_container)
-        val textView = view.findViewById<TextView>(R.id.udi_field_value)
+        val udiFieldLayout = view.findViewById<View>(R.id.udi_field_container)
+        val typeFieldLayout = view.findViewById<View>(R.id.type_field_container)
+        val udiTextView = view.findViewById<TextView>(R.id.udi_field_value)
+        val typeTextView = view.findViewById<TextView>(R.id.type_field_value)
+
         val progressBar = view.findViewById<ProgressBar>(R.id.progress_indicator);
         val scanningViewModel = ViewModelProvider(requireActivity()).get(ScanningViewModel::class.java)
 
         val arguments = arguments
         val udi = arguments?.getString(ARG_UDI_FIELD)
-        textView.text = udi
-        fieldLayout.visibility = View.VISIBLE
+        val type = arguments?.getString(ARG_TYPE_FIELD)
+
+        udiTextView.text = udi
+        typeTextView.text = type
+        udiFieldLayout.visibility = View.VISIBLE
+        typeFieldLayout.visibility = View.VISIBLE
         progressBar.visibility = View.GONE
 
         scanningViewModel.setState(ScanningViewModel.ScanningState.DETECTED)
@@ -49,11 +56,13 @@ open class BarcodeResultFragment(val onDismissCallback: OnDismissCallback) : Bot
 
         private const val TAG = "BarcodeResultFragment"
         private const val ARG_UDI_FIELD = "arg_udi_field"
+        private const val ARG_TYPE_FIELD = "arg_type_field"
 
-        fun show(fragmentManager: FragmentManager, udi: String, onDismissCallback: OnDismissCallback) {
+        fun show(fragmentManager: FragmentManager, udi: String, type: BarcodeAnalyzer.BarcodeType, onDismissCallback: OnDismissCallback) {
             val barcodeResultFragment = BarcodeResultFragment(onDismissCallback)
             val bundle = Bundle()
             bundle.putString(ARG_UDI_FIELD, udi)
+            bundle.putString(ARG_TYPE_FIELD, type.toString())
             barcodeResultFragment.arguments = bundle
             barcodeResultFragment.show(fragmentManager, TAG)
         }

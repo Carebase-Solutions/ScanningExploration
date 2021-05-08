@@ -23,10 +23,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
+    public enum BarcodeType {
+        SHIPMENT,
+        DEVICE,
+
+    }
     private static final String TAG = BarcodeAnalyzer.class.getSimpleName();
 
     public interface BarcodeAnalyzerListener {
-        void update(List<Barcode> barcodeList, @Nullable String udi);
+        void update(List<Barcode> barcodeList, @Nullable String udi, BarcodeType type);
     }
 
     private final BarcodeAnalyzerListener barcodeAnalyzerListener;
@@ -75,9 +80,13 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
         for (Barcode barcode : barcodeList) {
             String b = barcode.getDisplayValue();
             Log.d(TAG,"Scanned: " + b);
+            if (isShippingId(b)) {
+                udiBarcodes.add(barcode);
+                barcodeAnalyzerListener.update(udiBarcodes, b, BarcodeType.SHIPMENT);
+            }
             if (isUDI(b)) {
                 udiBarcodes.add(barcode);
-                barcodeAnalyzerListener.update(udiBarcodes, b);
+                barcodeAnalyzerListener.update(udiBarcodes, b, BarcodeType.DEVICE);
                 return;
             }
 
@@ -97,14 +106,14 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
             if (isHIBCCDI(udi[0]) && isHIBCCPI(udi[1])){
                 String udi = this.udi[0] + "/" + this.udi[1].substring(1);
                 if (isHIBCCUDI(udi)) {
-                    barcodeAnalyzerListener.update(udiBarcodes, udi);
+                    barcodeAnalyzerListener.update(udiBarcodes, udi, BarcodeType.DEVICE);
                 }
             }
             if (isGS1UDI(udi[0] + udi[1])) {
-                barcodeAnalyzerListener.update(udiBarcodes, udi[0] + udi[1]);
+                barcodeAnalyzerListener.update(udiBarcodes, udi[0] + udi[1], BarcodeType.DEVICE);
             }
         }
-        barcodeAnalyzerListener.update(udiBarcodes,null);
+        barcodeAnalyzerListener.update(udiBarcodes,null, null);
     }
 
     private boolean isDI(String barcode) {
@@ -117,6 +126,14 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
 
     private boolean isUDI(String barcode) {
         return isGS1UDI(barcode) || isHIBCCUDI(barcode);
+    }
+
+    private static final String SHIPPINGIDREGEX = "[A-Za-z0-9]{20}";
+    private final Pattern SHIPPINGIDPATTERN = Pattern.compile(SHIPPINGIDREGEX);
+
+    private boolean isShippingId(String barcode) {
+        Matcher matcher = SHIPPINGIDPATTERN.matcher(barcode);
+        return matcher.matches();
     }
 
     private static final String GS1DIREGEX = "01\\d{14}";
