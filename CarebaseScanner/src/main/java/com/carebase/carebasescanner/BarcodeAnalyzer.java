@@ -133,7 +133,7 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
     }
 
     private static final String GS1DIREGEX = "01\\d{14}";
-    private static final String GS1PIREGEX = "(11\\d{6})?17\\d{6}10[A-Za-z0-9]{2,20}(21[A-Za-z0-9]{2,20})?";
+    private static final String GS1PIREGEX = "([A-Za-z0-9]*)(17\\d{6}|15\\d{6})([A-Za-z0-9]*)";
     private static final String GS1UDIREGEX = GS1DIREGEX + GS1PIREGEX;
     private final Pattern GS1DIPATTERN = Pattern.compile(GS1DIREGEX);
     private final Pattern GS1PIPATTERN = Pattern.compile(GS1PIREGEX);
