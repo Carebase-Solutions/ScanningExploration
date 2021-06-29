@@ -74,7 +74,7 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
 
     private void analyzeBarcodes(List<Barcode> barcodeList) {
         for (Barcode barcode : barcodeList) {
-            String b = barcode.getDisplayValue().replaceAll("[^a-zA-Z0-9]","");
+            String b = barcode.getDisplayValue().replaceAll("[^a-zA-Z0-9+$]","");
             Log.d(TAG,"Scanned: " + b);
             if (isShippingId(b)) {
                 udiBarcodes.add(barcode);
