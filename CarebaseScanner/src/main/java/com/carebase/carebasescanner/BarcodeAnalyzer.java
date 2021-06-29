@@ -100,7 +100,11 @@ public class BarcodeAnalyzer implements ImageAnalysis.Analyzer {
         }
         if (udi[0] != null && udi[1] != null) {
             if (isHIBCCDI(udi[0]) && isHIBCCPI(udi[1])){
-                String udi = this.udi[0] + "/" + this.udi[1].substring(1);
+                // remove check characters and concatenate
+                String udi = this.udi[0].substring(0,this.udi[0].length()-1) + "/" + this.udi[1].substring(1,this.udi[1].length()-2);
+                // if udi contains unsupported formats, fix to supported format
+                String unsupportedIdentifierRegex = "\\$\\$8\\d\\d";
+                udi = udi.replaceFirst(unsupportedIdentifierRegex,"\\$\\$");
                 if (isHIBCCUDI(udi)) {
                     barcodeAnalyzerListener.update(udiBarcodes, udi, ScanningViewModel.BarcodeType.DEVICE);
                 }
